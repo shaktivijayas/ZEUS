@@ -13,6 +13,10 @@ class CheckInRepository {
   CollectionReference<Map<String, dynamic>> get _collection =>
       _firestore.collection('users').doc(_uid).collection('checkIns');
 
+  FirebaseFirestore get firestoreInstance => _firestore;
+
+  DocumentReference<Map<String, dynamic>> docRefFor(String date) => _collection.doc(date);
+
   Future<CheckIn?> getCheckIn(String date) async {
     final snap = await _collection.doc(date).get();
     if (!snap.exists) return null;

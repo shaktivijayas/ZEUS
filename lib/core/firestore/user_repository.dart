@@ -9,6 +9,8 @@ class UserRepository {
 
   DocumentReference<Map<String, dynamic>> get _doc => _firestore.collection('users').doc(_uid);
 
+  DocumentReference<Map<String, dynamic>> get docRef => _doc;
+
   Future<AppUser?> getUser() async {
     final snap = await _doc.get();
     if (!snap.exists) return null;

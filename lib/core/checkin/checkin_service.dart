@@ -1,3 +1,4 @@
+import '../../models/app_user.dart';
 import '../../models/check_in.dart';
 import '../firestore/checkin_repository.dart';
 import '../firestore/user_repository.dart';
@@ -13,27 +14,34 @@ class CheckInService {
 
   Future<void> checkInToday({required DateTime today}) async {
     final todayKey = _dateKey(today);
-    final existing = await _checkInRepo.getCheckIn(todayKey);
-    if (existing != null && existing.type == CheckInType.checkedIn) {
-      return; // already checked in today — idempotent no-op, no double streak credit.
-    }
+    final firestore = _checkInRepo.firestoreInstance;
+    final checkInRef = _checkInRepo.docRefFor(todayKey);
+    final userRef = _userRepo.docRef;
 
-    final user = await _userRepo.getUser();
-    if (user == null) return;
+    await firestore.runTransaction((transaction) async {
+      final checkInSnap = await transaction.get(checkInRef);
+      if (checkInSnap.exists && checkInSnap.data()!['type'] == CheckInType.checkedIn.value) {
+        return; // already checked in today — idempotent no-op, no double streak credit.
+      }
 
-    await _checkInRepo.writeCheckIn(CheckIn(
-      date: todayKey,
-      type: CheckInType.checkedIn,
-      timestamp: today,
-      workoutLogId: null,
-    ));
+      final userSnap = await transaction.get(userRef);
+      if (!userSnap.exists) return;
+      final user = AppUser.fromMap(userRef.id, userSnap.data()!);
 
-    final newStreak = user.currentStreak + 1;
-    await _userRepo.updateStreakAndFreezes(
-      currentStreak: newStreak,
-      longestStreak: newStreak > user.longestStreak ? newStreak : user.longestStreak,
-      freezesRemaining: user.freezesRemaining,
-      freezesResetDate: user.freezesResetDate,
-    );
+      final newStreak = user.currentStreak + 1;
+      final newLongest = newStreak > user.longestStreak ? newStreak : user.longestStreak;
+
+      transaction.set(checkInRef, CheckIn(
+        date: todayKey,
+        type: CheckInType.checkedIn,
+        timestamp: today,
+        workoutLogId: null,
+      ).toMap());
+
+      transaction.update(userRef, {
+        'currentStreak': newStreak,
+        'longestStreak': newLongest,
+      });
+    });
   }
 }

@@ -52,4 +52,14 @@ void main() {
     expect(user!.currentStreak, 6);
     expect(user.longestStreak, 6);
   });
+
+  test('concurrent check-ins the same day still only increment the streak once', () async {
+    await Future.wait([
+      service.checkInToday(today: DateTime.utc(2026, 8, 2)),
+      service.checkInToday(today: DateTime.utc(2026, 8, 2)),
+    ]);
+
+    final user = await userRepo.getUser();
+    expect(user!.currentStreak, 1);
+  });
 }
