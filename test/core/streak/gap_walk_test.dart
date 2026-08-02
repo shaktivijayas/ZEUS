@@ -158,5 +158,58 @@ void main() {
       expect(result.newFreezesResetDate, d(2026, 9, 1));
       expect(result.newFreezesRemaining, 0);
     });
+
+    test('month-end overflow: freezesResetDate on Jan 31 + 1 month lands on Feb 28, not Mar 3', () {
+      // This tests the _addOneMonth fix: Jan 31 + 1 month should clamp to Feb 28,
+      // not overflow to Mar 3. We pass freezesResetDate of Jan 31, 2026 (which has
+      // already passed relative to today = Feb 2), triggering a reset.
+      // In 2026, Feb has 28 days (not a leap year), so the reset date should be Feb 28, 2026.
+      // Gap days: Feb 1 (missing, consumes 1 freeze).
+      final result = runGapWalk(
+        lastActivityDate: d(2026, 1, 31),
+        today: d(2026, 2, 2),
+        currentStreak: 5,
+        freezesRemaining: 0,
+        freezesResetDate: d(2026, 1, 31),
+        existingCheckIns: {},
+      );
+
+      // The reset should fire (Jan 31 is not after Feb 2), resetting to 2 freezes,
+      // then the gap day (Feb 1) consumes 1 freeze, leaving 1.
+      expect(result.newFreezesResetDate, d(2026, 2, 28));
+      expect(result.newFreezesRemaining, 1, reason: 'reset to 2, then 1 consumed by gap day');
+      expect(result.writes, hasLength(1));
+      expect(result.writes.single.type, CheckInType.freezeUsed);
+    });
+
+    test('midnight-UTC normalization: DateTimes with nonzero time-of-day normalize to midnight', () {
+      // This tests that the function normalizes all DateTime inputs to UTC midnight,
+      // so callers passing time-of-day components don't get unexpected behavior.
+      // We compare a call with midnight values vs. nonzero time-of-day values.
+      final resultMidnight = runGapWalk(
+        lastActivityDate: d(2026, 8, 1),
+        today: d(2026, 8, 3),
+        currentStreak: 5,
+        freezesRemaining: 2,
+        freezesResetDate: d(2026, 9, 1),
+        existingCheckIns: {},
+      );
+
+      final resultWithTime = runGapWalk(
+        // Same dates, but with nonzero time components (15:30:45 UTC).
+        lastActivityDate: DateTime.utc(2026, 8, 1, 15, 30, 45),
+        today: DateTime.utc(2026, 8, 3, 15, 30, 45),
+        currentStreak: 5,
+        freezesRemaining: 2,
+        freezesResetDate: DateTime.utc(2026, 9, 1, 15, 30, 45),
+        existingCheckIns: {},
+      );
+
+      // Both should produce identical results because the function normalizes to midnight.
+      expect(resultWithTime.writes, hasLength(resultMidnight.writes.length));
+      expect(resultWithTime.newStreak, resultMidnight.newStreak);
+      expect(resultWithTime.newFreezesRemaining, resultMidnight.newFreezesRemaining);
+      expect(resultWithTime.newFreezesResetDate, resultMidnight.newFreezesResetDate);
+    });
   });
 }
