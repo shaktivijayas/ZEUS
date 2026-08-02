@@ -1,3 +1,4 @@
+import '../../models/check_in.dart';
 import '../firestore/checkin_repository.dart';
 import '../firestore/user_repository.dart';
 import '../streak/gap_walk.dart';
@@ -16,7 +17,7 @@ class AppOpenSyncService {
 
     final lastActivityDate = await _checkInRepo.getLastActivityDate();
     final existingCheckIns = lastActivityDate == null
-        ? <String, dynamic>{}
+        ? <String, CheckIn>{}
         : await _checkInRepo.getCheckInsInRange(lastActivityDate, effectiveToday);
 
     final result = runGapWalk(
@@ -25,18 +26,24 @@ class AppOpenSyncService {
       currentStreak: user.currentStreak,
       freezesRemaining: user.freezesRemaining,
       freezesResetDate: user.freezesResetDate,
-      existingCheckIns: existingCheckIns.cast(),
+      existingCheckIns: existingCheckIns,
     );
 
     if (result.writes.isNotEmpty) {
       await _checkInRepo.writeCheckIns(result.writes);
     }
 
-    await _userRepo.updateStreakAndFreezes(
-      currentStreak: result.newStreak,
-      freezesRemaining: result.newFreezesRemaining,
-      freezesResetDate: result.newFreezesResetDate,
-    );
+    final userStateChanged = result.newStreak != user.currentStreak ||
+        result.newFreezesRemaining != user.freezesRemaining ||
+        result.newFreezesResetDate != user.freezesResetDate;
+
+    if (userStateChanged) {
+      await _userRepo.updateStreakAndFreezes(
+        currentStreak: result.newStreak,
+        freezesRemaining: result.newFreezesRemaining,
+        freezesResetDate: result.newFreezesResetDate,
+      );
+    }
   }
 
   DateTime _todayUtcMidnight() {
