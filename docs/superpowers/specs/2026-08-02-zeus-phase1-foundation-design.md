@@ -69,6 +69,7 @@ users/{uid}/workoutLogs/{logId}
 
 Given `lastActivityDate` (the most recent date with any `checkIns` doc) and `today`:
 
+0. **Before walking the gap**, check `freezesResetDate`; if it has passed, reset `freezesRemaining` to 2 and advance `freezesResetDate` forward by one month. This must happen first — otherwise a stale, already-due-for-reset low freeze count could wrongly cause a `missed` day during the walk below when a reset should have applied instead.
 1. Walk forward date-by-date from the day after `lastActivityDate` through yesterday, **oldest first**.
 2. For each date in the range: **first check whether a `checkIns` doc already exists for that date** (e.g. a rest day pre-marked in advance via the calendar). If a doc already exists, skip it entirely — do not touch it, do not consume a freeze.
 3. If no doc exists for that date:
@@ -96,7 +97,7 @@ This algorithm is a pure function of `(lastActivityDate, today, freezesRemaining
 
 ## Testing Plan
 
-- **Unit tests** for the streak/gap-walk algorithm: consecutive-day math, freeze consumption, rest-day bridging, rest-day-vs-gap-walk interaction (pre-existing docs are skipped, never overwritten), backfilled `missed` days beyond freeze exhaustion, idempotent double check-in.
+- **Unit tests** for the streak/gap-walk algorithm: consecutive-day math, freeze consumption, rest-day bridging, rest-day-vs-gap-walk interaction (pre-existing docs are skipped, never overwritten), backfilled `missed` days beyond freeze exhaustion, idempotent double check-in, monthly freeze reset (including the ordering case: a stale/due-for-reset `freezesResetDate` must reset `freezesRemaining` before the gap-walk runs, not after).
 - **Widget tests** for the check-in flow (including draft autosave / resume-after-backing-out) and the Split Editor.
 - **Firestore security rules tests** via the Firebase emulator suite: a user can read/write only under `users/{uid}/*` where `uid == request.auth.uid`; all cross-user access attempts are denied.
 - **Manual verification** on a real Android device/emulator using the actual built APK before calling Phase 1 done.
