@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_providers.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
@@ -41,6 +42,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       } else {
         await repo.signIn(email: _emailController.text.trim(), password: _passwordController.text);
       }
+      // Sign-in/sign-up changed FirebaseAuth's current user, which the
+      // router's `redirect` gate depends on. redirect only re-runs on
+      // navigation, an attached refreshListenable, or an explicit
+      // refresh() call (go_router 17.3.0), so trigger one explicitly.
+      // `maybeOf` (rather than `of`) makes this a no-op in widget tests
+      // that mount AuthScreen directly under a plain MaterialApp with no
+      // GoRouter ancestor.
+      if (mounted) GoRouter.maybeOf(context)?.refresh();
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
