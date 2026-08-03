@@ -3,9 +3,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/auth_screen.dart';
+import '../../features/home/home_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
+import '../checkin/checkin_service.dart';
+import '../firestore/checkin_repository.dart';
 import '../firestore/split_repository.dart';
 import '../firestore/user_repository.dart';
+import '../firestore/workout_log_repository.dart';
+import '../sync/app_open_sync_service.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/auth',
@@ -36,15 +41,22 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/home',
-      builder: (context, state) => const _HomeStub(),
+      builder: (context, state) {
+        final uid = FirebaseAuth.instance.currentUser!.uid;
+        final firestore = FirebaseFirestore.instance;
+        final userRepo = UserRepository(firestore, uid);
+        final splitRepo = SplitRepository(firestore, uid);
+        final checkInRepo = CheckInRepository(firestore, uid);
+        final workoutLogRepo = WorkoutLogRepository(firestore, uid);
+        AppOpenSyncService(checkInRepo, userRepo).sync(); // fire-and-forget; HomeScreen's streams pick up the result
+        return HomeScreen(
+          userRepo: userRepo,
+          splitRepo: splitRepo,
+          checkInRepo: checkInRepo,
+          workoutLogRepo: workoutLogRepo,
+          checkInService: CheckInService(checkInRepo, userRepo),
+        );
+      },
     ),
   ],
 );
-
-/// Replaced by the real HomeScreen in Task 11.
-class _HomeStub extends StatelessWidget {
-  const _HomeStub();
-
-  @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Home')));
-}
