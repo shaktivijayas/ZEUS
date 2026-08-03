@@ -3076,7 +3076,7 @@ const _weekdayIds = {
 };
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({
+  HomeScreen({
     super.key,
     required this.userRepo,
     required this.splitRepo,
@@ -3084,21 +3084,21 @@ class HomeScreen extends StatefulWidget {
     required this.workoutLogRepo,
     required this.checkInService,
     DateTime? today,
-  }) : today = today ?? DateTime.now;
+  }) : today = today ?? DateTime.now().toUtc();
 
   final UserRepository userRepo;
   final SplitRepository splitRepo;
   final CheckInRepository checkInRepo;
   final WorkoutLogRepository workoutLogRepo;
   final CheckInService checkInService;
-  final dynamic today; // DateTime, kept dynamic only to allow the `??` default above
+  final DateTime today;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late final DateTime _today = widget.today is DateTime ? widget.today as DateTime : DateTime.now().toUtc();
+  late final DateTime _today = widget.today;
   bool _checkedInToday = false;
   WorkoutLog? _draft;
 
@@ -3123,47 +3123,57 @@ class _HomeScreenState extends State<HomeScreen> {
     await _loadCheckInState();
   }
 
+  List<ExerciseLog> _blankExerciseLogs(SplitDay day) {
+    return day.exercises
+        .map((e) => ExerciseLog(
+              name: e.name,
+              targetSets: e.targetSets,
+              targetReps: e.targetReps,
+              targetWeight: e.targetWeight,
+              actualSets: null,
+              actualReps: null,
+              actualWeight: null,
+              status: ExerciseLogStatus.skipped,
+              notes: '',
+            ))
+        .toList();
+  }
+
   Future<void> _toggleExercise(SplitDay day, int index) async {
-    final exercise = day.exercises[index];
+    final target = day.exercises[index];
+    final baseExercises = _draft?.exercises ?? _blankExerciseLogs(day);
+    final updatedExercises = [
+      for (var i = 0; i < baseExercises.length; i++)
+        i == index
+            ? baseExercises[i].copyWith(
+                status: ExerciseLogStatus.done,
+                actualSets: target.targetSets,
+                actualReps: target.targetReps,
+                actualWeight: target.targetWeight,
+              )
+            : baseExercises[i],
+    ];
+
     if (_draft == null) {
       final id = await widget.workoutLogRepo.createDraft(WorkoutLog(
         id: '',
         date: _dateKey(_today),
         splitDayId: day.id,
         status: WorkoutLogStatus.draft,
-        exercises: day.exercises
-            .map((e) => ExerciseLog(
-                  name: e.name,
-                  targetSets: e.targetSets,
-                  targetReps: e.targetReps,
-                  targetWeight: e.targetWeight,
-                  actualSets: null,
-                  actualReps: null,
-                  actualWeight: null,
-                  status: ExerciseLogStatus.skipped,
-                  notes: '',
-                ))
-            .toList(),
+        exercises: updatedExercises,
+        completedAt: null,
       ));
-      final created = await widget.workoutLogRepo.getForDate(_dateKey(_today));
-      setState(() => _draft = created!.copyWith(
-            exercises: [
-              for (var i = 0; i < created.exercises.length; i++)
-                i == index
-                    ? created.exercises[i].copyWith(status: ExerciseLogStatus.done, actualSets: exercise.targetSets, actualReps: exercise.targetReps, actualWeight: exercise.targetWeight)
-                    : created.exercises[i],
-            ],
+      setState(() => _draft = WorkoutLog(
+            id: id,
+            date: _dateKey(_today),
+            splitDayId: day.id,
+            status: WorkoutLogStatus.draft,
+            exercises: updatedExercises,
+            completedAt: null,
           ));
-      await widget.workoutLogRepo.updateLog(WorkoutLog(id: id, date: _draft!.date, splitDayId: _draft!.splitDayId, status: _draft!.status, exercises: _draft!.exercises, completedAt: null));
       return;
     }
 
-    final updatedExercises = [
-      for (var i = 0; i < _draft!.exercises.length; i++)
-        i == index
-            ? _draft!.exercises[i].copyWith(status: ExerciseLogStatus.done, actualSets: exercise.targetSets, actualReps: exercise.targetReps, actualWeight: exercise.targetWeight)
-            : _draft!.exercises[i],
-    ];
     final updated = _draft!.copyWith(exercises: updatedExercises);
     setState(() => _draft = updated);
     await widget.workoutLogRepo.updateLog(updated);
