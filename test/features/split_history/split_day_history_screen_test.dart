@@ -26,8 +26,9 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    final tiles = find.byType(ListTile);
-    expect(tiles, findsNWidgets(2));
-    expect(find.text('2026-08-02'), findsOneWidget);
+    final tileWidgets = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
+    expect(tileWidgets, hasLength(2));
+    expect((tileWidgets[0].title as Text).data, '2026-08-02', reason: 'most recent log must render first');
+    expect((tileWidgets[1].title as Text).data, '2026-07-20');
   });
 }
