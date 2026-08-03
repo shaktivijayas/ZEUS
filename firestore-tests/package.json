@@ -1,0 +1,11 @@
+{
+  "name": "zeus-firestore-rules-tests",
+  "private": true,
+  "scripts": {
+    "test": "mocha rules.test.js --timeout 20000"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^3.0.4",
+    "mocha": "^10.7.3"
+  }
+}
