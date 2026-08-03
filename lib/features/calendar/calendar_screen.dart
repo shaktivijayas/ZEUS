@@ -12,14 +12,20 @@ class CalendarScreen extends StatelessWidget {
   final DateTime initialMonth;
 
   Future<void> _markRestDay(String dateKey) async {
-    final existing = await checkInRepo.getCheckIn(dateKey);
-    if (existing != null) return; // never overwrite an existing doc.
-    await checkInRepo.writeCheckIn(CheckIn(
-      date: dateKey,
-      type: CheckInType.restDay,
-      timestamp: DateTime.now().toUtc(),
-      workoutLogId: null,
-    ));
+    final firestore = checkInRepo.firestoreInstance;
+    final ref = checkInRepo.docRefFor(dateKey);
+
+    await firestore.runTransaction((transaction) async {
+      final snap = await transaction.get(ref);
+      if (snap.exists) return; // never overwrite an existing doc.
+
+      transaction.set(ref, CheckIn(
+        date: dateKey,
+        type: CheckInType.restDay,
+        timestamp: DateTime.now().toUtc(),
+        workoutLogId: null,
+      ).toMap());
+    });
   }
 
   @override
