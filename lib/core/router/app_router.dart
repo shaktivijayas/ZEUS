@@ -1,10 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/auth_screen.dart';
+import '../../features/calendar/calendar_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
+import '../../features/profile/profile_screen.dart';
+import '../../features/split_editor/split_editor_screen.dart';
+import '../../features/split_history/split_day_history_screen.dart';
+import '../auth/auth_repository.dart';
 import '../checkin/checkin_service.dart';
 import '../firestore/checkin_repository.dart';
 import '../firestore/split_repository.dart';
@@ -55,6 +59,38 @@ final appRouter = GoRouter(
           checkInRepo: checkInRepo,
           workoutLogRepo: workoutLogRepo,
           checkInService: CheckInService(checkInRepo, userRepo),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/split-editor',
+      builder: (context, state) => SplitEditorScreen(
+        splitRepo: SplitRepository(FirebaseFirestore.instance, FirebaseAuth.instance.currentUser!.uid),
+      ),
+    ),
+    GoRoute(
+      path: '/calendar',
+      builder: (context, state) => CalendarScreen(
+        checkInRepo: CheckInRepository(FirebaseFirestore.instance, FirebaseAuth.instance.currentUser!.uid),
+        initialMonth: DateTime.now().toUtc(),
+      ),
+    ),
+    GoRoute(
+      path: '/split-history/:dayId',
+      builder: (context, state) => SplitDayHistoryScreen(
+        workoutLogRepo: WorkoutLogRepository(FirebaseFirestore.instance, FirebaseAuth.instance.currentUser!.uid),
+        splitDayId: state.pathParameters['dayId']!,
+        splitDayLabel: state.uri.queryParameters['label'] ?? state.pathParameters['dayId']!,
+      ),
+    ),
+    GoRoute(
+      path: '/profile',
+      builder: (context, state) {
+        final uid = FirebaseAuth.instance.currentUser!.uid;
+        final firestore = FirebaseFirestore.instance;
+        return ProfileScreen(
+          userRepo: UserRepository(firestore, uid),
+          authRepo: AuthRepository(FirebaseAuth.instance, (uid) => UserRepository(firestore, uid)),
         );
       },
     ),

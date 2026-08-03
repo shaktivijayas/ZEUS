@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/checkin/checkin_service.dart';
 import '../../core/firestore/checkin_repository.dart';
 import '../../core/firestore/split_repository.dart';
@@ -142,7 +143,14 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ZEUS')),
+      appBar: AppBar(
+        title: const Text('ZEUS'),
+        actions: [
+          IconButton(icon: const Icon(Icons.calendar_month), onPressed: () => context.push('/calendar')),
+          IconButton(icon: const Icon(Icons.edit_calendar), onPressed: () => context.push('/split-editor')),
+          IconButton(icon: const Icon(Icons.person), onPressed: () => context.push('/profile')),
+        ],
+      ),
       body: StreamBuilder<AppUser?>(
         stream: widget.userRepo.watchUser(),
         builder: (context, userSnapshot) {
