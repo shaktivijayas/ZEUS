@@ -1,13 +1,12 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zeus/core/firestore/split_repository.dart';
 import 'package:zeus/core/firestore/user_repository.dart';
 import 'package:zeus/features/onboarding/onboarding_screen.dart';
 
 void main() {
-  testWidgets('saving the first split day marks the user onboarded', (tester) async {
+  testWidgets('saving the first split day marks the user onboarded and uses the selected weekday as the doc id', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final userRepo = UserRepository(firestore, 'uid-1');
     final splitRepo = SplitRepository(firestore, 'uid-1');
@@ -28,6 +27,7 @@ void main() {
 
     final days = await splitRepo.watchSplitDays().first;
     expect(days, hasLength(1));
+    expect(days.single.id, 'monday', reason: 'default dropdown selection is Monday');
     expect(days.single.label, 'Chest & Shoulders');
   });
 }

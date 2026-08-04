@@ -3,38 +3,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zeus/core/firestore/split_repository.dart';
 import 'package:zeus/features/split_editor/split_editor_screen.dart';
+import 'package:zeus/models/exercise_target.dart';
 import 'package:zeus/models/split_day.dart';
 
 void main() {
-  testWidgets('adding a day shows it in the list', (tester) async {
+  testWidgets('shows all 7 weekdays, unconfigured days show as rest days', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final repo = SplitRepository(firestore, 'uid-1');
 
     await tester.pumpWidget(MaterialApp(home: SplitEditorScreen(splitRepo: repo)));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('split_editor_add_day_button')));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('add_day_label_field')), 'Legs');
-    await tester.tap(find.byKey(const Key('add_day_confirm_button')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Legs'), findsOneWidget);
+    expect(find.text('Monday'), findsOneWidget);
+    expect(find.text('Sunday'), findsOneWidget);
+    expect(find.text('Rest day — tap to configure'), findsNWidgets(7));
   });
 
-  testWidgets('deleting a day removes it from the list', (tester) async {
+  testWidgets('a configured weekday shows its label and exercise count instead of rest day', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final repo = SplitRepository(firestore, 'uid-1');
-    await repo.saveSplitDay(const SplitDay(id: 'legs', label: 'Legs', order: 0, exercises: []));
+    await repo.saveSplitDay(const SplitDay(
+      id: 'monday',
+      label: 'Chest & Shoulders',
+      order: 0,
+      exercises: [ExerciseTarget(name: 'Bench Press', targetSets: 4, targetReps: 8, targetWeight: 60, order: 0)],
+    ));
 
     await tester.pumpWidget(MaterialApp(home: SplitEditorScreen(splitRepo: repo)));
     await tester.pumpAndSettle();
 
-    expect(find.text('Legs'), findsOneWidget);
-
-    await tester.tap(find.byKey(const Key('delete_day_legs')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Legs'), findsNothing);
+    expect(find.text('Chest & Shoulders · 1 exercises'), findsOneWidget);
+    expect(find.text('Rest day — tap to configure'), findsNWidgets(6));
   });
 }

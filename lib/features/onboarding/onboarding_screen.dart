@@ -4,6 +4,16 @@ import '../../core/firestore/split_repository.dart';
 import '../../core/firestore/user_repository.dart';
 import '../../models/split_day.dart';
 
+const _weekdays = [
+  ('monday', 'Monday'),
+  ('tuesday', 'Tuesday'),
+  ('wednesday', 'Wednesday'),
+  ('thursday', 'Thursday'),
+  ('friday', 'Friday'),
+  ('saturday', 'Saturday'),
+  ('sunday', 'Sunday'),
+];
+
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key, required this.userRepo, required this.splitRepo});
 
@@ -16,6 +26,7 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final _labelController = TextEditingController();
+  String _selectedWeekday = _weekdays.first.$1;
   bool _saving = false;
   String? _error;
 
@@ -31,22 +42,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       _saving = true;
       _error = null;
     });
-
     try {
       await widget.splitRepo.saveSplitDay(SplitDay(
-        id: 'day-${DateTime.now().microsecondsSinceEpoch}',
+        id: _selectedWeekday,
         label: _labelController.text.trim(),
-        order: 0,
+        order: _weekdays.indexWhere((w) => w.$1 == _selectedWeekday),
         exercises: const [],
       ));
       await widget.userRepo.setOnboarded();
-
-      // The user is now onboarded, which the router's `redirect` gate
-      // depends on. redirect only re-runs on navigation, an attached
-      // refreshListenable, or an explicit refresh() call (go_router
-      // 17.3.0), so trigger one explicitly. `maybeOf` (rather than `of`)
-      // makes this a no-op in widget tests that mount OnboardingScreen
-      // directly under a plain MaterialApp with no GoRouter ancestor.
       if (mounted) GoRouter.maybeOf(context)?.refresh();
     } catch (e) {
       setState(() => _error = e.toString());
@@ -63,8 +66,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            const Text('Before you start tracking, add at least one split day. You can add exercises and more days later.'),
+            const Text('Before you start tracking, set up at least one weekly split day. You can configure the rest — and add exercises — later in the Split Editor.'),
             const SizedBox(height: 16),
+            DropdownButton<String>(
+              key: const Key('onboarding_weekday_dropdown'),
+              value: _selectedWeekday,
+              items: [
+                for (final w in _weekdays) DropdownMenuItem(value: w.$1, child: Text(w.$2)),
+              ],
+              onChanged: (value) => setState(() => _selectedWeekday = value!),
+            ),
             TextField(
               key: const Key('onboarding_day_label_field'),
               controller: _labelController,
