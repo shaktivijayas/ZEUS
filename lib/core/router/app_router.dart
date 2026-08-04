@@ -16,9 +16,11 @@ import '../firestore/split_repository.dart';
 import '../firestore/user_repository.dart';
 import '../firestore/workout_log_repository.dart';
 import '../sync/app_open_sync_service.dart';
+import 'go_router_refresh_stream.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/auth',
+  refreshListenable: GoRouterRefreshStream(FirebaseAuth.instance.authStateChanges()),
   redirect: (context, state) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     final onAuthRoute = state.matchedLocation == '/auth';
