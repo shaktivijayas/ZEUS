@@ -4092,6 +4092,1010 @@ No code changes in this task — if all manual checks pass, Phase 1 is done. Rep
 
 ---
 
+## Amendment: Final Whole-Branch Review Fixes (Tasks 17–21)
+
+The final review after Task 16 found 5 Critical cross-task integration gaps invisible to any single task's own reviewer — the two biggest (split-day identity, no exercise editor) are gaps in this plan itself, not implementer errors: the original design spec specified `users/{uid}/splitDays/{dayId} // one doc per day of week, Mon–Sun`, but Tasks 9/10 generated arbitrary timestamp IDs instead, and Task 10 never included exercise editing at all. Tasks 17–21 below fix all 5 Critical findings, decided with the human: split days become exactly 7 fixed weekday slots (no free add/delete), and exercises are edited on a new dedicated per-day screen reached by tapping a weekday row.
+
+### Task 17: Split-day weekday identity — Onboarding + Split Editor rewrite
+
+**Files:**
+- Modify: `lib/features/onboarding/onboarding_screen.dart`
+- Modify: `lib/features/split_editor/split_editor_screen.dart`
+- Modify: `test/features/onboarding/onboarding_screen_test.dart`
+- Modify: `test/features/split_editor/split_editor_screen_test.dart`
+
+**Interfaces:**
+- Consumes: `SplitRepository`, `UserRepository` (Task 5), `SplitDay` (Task 3).
+- Produces: split day doc IDs restricted to exactly the 7 lowercase weekday strings (`'monday'`..`'sunday'`) — matching `_weekdayIds` already in `lib/features/home/home_screen.dart`, which needs **no changes** once this lands. `SplitEditorScreen` now shows a fixed 7-row list (no add/delete of days) and navigates to `/split-editor/:dayId` on tap (that route is added in Task 18 — safe to reference now, same incremental pattern as Task 9's `/home` stub preceding Task 11).
+
+- [ ] **Step 1: Write the failing test for OnboardingScreen's weekday selection**
+
+`test/features/onboarding/onboarding_screen_test.dart` (replace entirely):
+
+```dart
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:zeus/core/firestore/split_repository.dart';
+import 'package:zeus/core/firestore/user_repository.dart';
+import 'package:zeus/features/onboarding/onboarding_screen.dart';
+
+void main() {
+  testWidgets('saving the first split day marks the user onboarded and uses the selected weekday as the doc id', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final userRepo = UserRepository(firestore, 'uid-1');
+    final splitRepo = SplitRepository(firestore, 'uid-1');
+    await userRepo.createInitialUser(name: 'Vani', email: 'vani@example.com');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: OnboardingScreen(userRepo: userRepo, splitRepo: splitRepo),
+      ),
+    );
+
+    await tester.enterText(find.byKey(const Key('onboarding_day_label_field')), 'Chest & Shoulders');
+    await tester.tap(find.byKey(const Key('onboarding_save_button')));
+    await tester.pumpAndSettle();
+
+    final user = await userRepo.getUser();
+    expect(user!.onboarded, isTrue);
+
+    final days = await splitRepo.watchSplitDays().first;
+    expect(days, hasLength(1));
+    expect(days.single.id, 'monday', reason: 'default dropdown selection is Monday');
+    expect(days.single.label, 'Chest & Shoulders');
+  });
+}
+```
+
+- [ ] **Step 2: Run to confirm it fails**
+
+```bash
+/c/src/flutter/bin/flutter test test/features/onboarding/onboarding_screen_test.dart
+```
+
+Expected: FAIL — the current `OnboardingScreen` generates a timestamp ID, not `'monday'`.
+
+- [ ] **Step 3: Implement the new OnboardingScreen**
+
+`lib/features/onboarding/onboarding_screen.dart` (replace entirely):
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/firestore/split_repository.dart';
+import '../../core/firestore/user_repository.dart';
+import '../../models/split_day.dart';
+
+const _weekdays = [
+  ('monday', 'Monday'),
+  ('tuesday', 'Tuesday'),
+  ('wednesday', 'Wednesday'),
+  ('thursday', 'Thursday'),
+  ('friday', 'Friday'),
+  ('saturday', 'Saturday'),
+  ('sunday', 'Sunday'),
+];
+
+class OnboardingScreen extends StatefulWidget {
+  const OnboardingScreen({super.key, required this.userRepo, required this.splitRepo});
+
+  final UserRepository userRepo;
+  final SplitRepository splitRepo;
+
+  @override
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
+}
+
+class _OnboardingScreenState extends State<OnboardingScreen> {
+  final _labelController = TextEditingController();
+  String _selectedWeekday = _weekdays.first.$1;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _labelController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_labelController.text.trim().isEmpty) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.splitRepo.saveSplitDay(SplitDay(
+        id: _selectedWeekday,
+        label: _labelController.text.trim(),
+        order: _weekdays.indexWhere((w) => w.$1 == _selectedWeekday),
+        exercises: const [],
+      ));
+      await widget.userRepo.setOnboarded();
+      if (mounted) GoRouter.maybeOf(context)?.refresh();
+    } catch (e) {
+      setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Set up your first split day')),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            const Text('Before you start tracking, set up at least one weekly split day. You can configure the rest — and add exercises — later in the Split Editor.'),
+            const SizedBox(height: 16),
+            DropdownButton<String>(
+              key: const Key('onboarding_weekday_dropdown'),
+              value: _selectedWeekday,
+              items: [
+                for (final w in _weekdays) DropdownMenuItem(value: w.$1, child: Text(w.$2)),
+              ],
+              onChanged: (value) => setState(() => _selectedWeekday = value!),
+            ),
+            TextField(
+              key: const Key('onboarding_day_label_field'),
+              controller: _labelController,
+              decoration: const InputDecoration(labelText: 'Split day name (e.g. Chest & Shoulders)'),
+            ),
+            const SizedBox(height: 16),
+            if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
+            ElevatedButton(
+              key: const Key('onboarding_save_button'),
+              onPressed: _saving ? null : _save,
+              child: const Text('Save and continue'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+- [ ] **Step 4: Run to confirm it passes**
+
+```bash
+/c/src/flutter/bin/flutter test test/features/onboarding/onboarding_screen_test.dart
+```
+
+Expected: PASS.
+
+- [ ] **Step 5: Write the failing test for the rewritten SplitEditorScreen**
+
+`test/features/split_editor/split_editor_screen_test.dart` (replace entirely):
+
+```dart
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:zeus/core/firestore/split_repository.dart';
+import 'package:zeus/features/split_editor/split_editor_screen.dart';
+import 'package:zeus/models/exercise_target.dart';
+import 'package:zeus/models/split_day.dart';
+
+void main() {
+  testWidgets('shows all 7 weekdays, unconfigured days show as rest days', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final repo = SplitRepository(firestore, 'uid-1');
+
+    await tester.pumpWidget(MaterialApp(home: SplitEditorScreen(splitRepo: repo)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Monday'), findsOneWidget);
+    expect(find.text('Sunday'), findsOneWidget);
+    expect(find.text('Rest day — tap to configure'), findsNWidgets(7));
+  });
+
+  testWidgets('a configured weekday shows its label and exercise count instead of rest day', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final repo = SplitRepository(firestore, 'uid-1');
+    await repo.saveSplitDay(const SplitDay(
+      id: 'monday',
+      label: 'Chest & Shoulders',
+      order: 0,
+      exercises: [ExerciseTarget(name: 'Bench Press', targetSets: 4, targetReps: 8, targetWeight: 60, order: 0)],
+    ));
+
+    await tester.pumpWidget(MaterialApp(home: SplitEditorScreen(splitRepo: repo)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Chest & Shoulders · 1 exercises'), findsOneWidget);
+    expect(find.text('Rest day — tap to configure'), findsNWidgets(6));
+  });
+}
+```
+
+- [ ] **Step 6: Run to confirm it fails, then implement**
+
+```bash
+/c/src/flutter/bin/flutter test test/features/split_editor/split_editor_screen_test.dart
+```
+
+Expected: FAIL.
+
+`lib/features/split_editor/split_editor_screen.dart` (replace entirely):
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/firestore/split_repository.dart';
+import '../../models/split_day.dart';
+
+const _weekdays = [
+  ('monday', 'Monday'),
+  ('tuesday', 'Tuesday'),
+  ('wednesday', 'Wednesday'),
+  ('thursday', 'Thursday'),
+  ('friday', 'Friday'),
+  ('saturday', 'Saturday'),
+  ('sunday', 'Sunday'),
+];
+
+class SplitEditorScreen extends StatelessWidget {
+  const SplitEditorScreen({super.key, required this.splitRepo});
+
+  final SplitRepository splitRepo;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Split Editor')),
+      body: StreamBuilder<List<SplitDay>>(
+        stream: splitRepo.watchSplitDays(),
+        builder: (context, snapshot) {
+          final byId = {for (final d in snapshot.data ?? const <SplitDay>[]) d.id: d};
+          return ListView(
+            children: [
+              for (final (id, name) in _weekdays)
+                ListTile(
+                  key: Key('weekday_row_$id'),
+                  title: Text(name),
+                  subtitle: Text(
+                    byId[id] == null
+                        ? 'Rest day — tap to configure'
+                        : '${byId[id]!.label} · ${byId[id]!.exercises.length} exercises',
+                  ),
+                  onTap: () => context.push('/split-editor/$id', extra: name),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+```
+
+- [ ] **Step 7: Run to confirm it passes**
+
+```bash
+/c/src/flutter/bin/flutter test test/features/split_editor/split_editor_screen_test.dart
+```
+
+Expected: PASS.
+
+- [ ] **Step 8: Run the full suite and commit**
+
+```bash
+/c/src/flutter/bin/flutter test
+git add lib/features/onboarding lib/features/split_editor test/features/onboarding test/features/split_editor
+git commit -m "Fix split-day identity: pin to 7 weekday slots, remove free add/delete"
+```
+
+---
+
+### Task 18: Split-day exercise editor + router wiring + composite index
+
+**Files:**
+- Create: `lib/features/split_editor/split_day_detail_screen.dart`
+- Create: `test/features/split_editor/split_day_detail_screen_test.dart`
+- Create: `firestore.indexes.json`
+- Modify: `firebase.json` (merge `indexes` key alongside existing `rules` under `firestore`)
+- Modify: `lib/core/router/app_router.dart` (add `/split-editor/:dayId` route)
+
+**Interfaces:**
+- Consumes: `SplitRepository` (Task 5), `SplitDay`, `ExerciseTarget` (Task 3).
+- Produces: `SplitDayDetailScreen({required SplitRepository splitRepo, required String dayId, required String weekdayLabel})` — lets the user set/change the day's label, add exercises, delete exercises, clear the day back to a rest day, and jump to that day's history (closes the previously-deferred "no navigation entry point for `/split-history/:dayId`" gap).
+
+- [ ] **Step 1: Write the failing tests**
+
+`test/features/split_editor/split_day_detail_screen_test.dart`:
+
+```dart
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:zeus/core/firestore/split_repository.dart';
+import 'package:zeus/features/split_editor/split_day_detail_screen.dart';
+import 'package:zeus/models/exercise_target.dart';
+import 'package:zeus/models/split_day.dart';
+
+void main() {
+  testWidgets('saving a label creates the split day doc', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final repo = SplitRepository(firestore, 'uid-1');
+
+    await tester.pumpWidget(MaterialApp(
+      home: SplitDayDetailScreen(splitRepo: repo, dayId: 'monday', weekdayLabel: 'Monday'),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('split_day_label_field')), 'Chest & Shoulders');
+    await tester.tap(find.byKey(const Key('split_day_save_label_button')));
+    await tester.pumpAndSettle();
+
+    final days = await repo.watchSplitDays().first;
+    expect(days.single.id, 'monday');
+    expect(days.single.label, 'Chest & Shoulders');
+  });
+
+  testWidgets('adding an exercise appends it to the day', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final repo = SplitRepository(firestore, 'uid-1');
+    await repo.saveSplitDay(const SplitDay(id: 'monday', label: 'Chest', order: 0, exercises: []));
+
+    await tester.pumpWidget(MaterialApp(
+      home: SplitDayDetailScreen(splitRepo: repo, dayId: 'monday', weekdayLabel: 'Monday'),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('add_exercise_button')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('exercise_name_field')), 'Bench Press');
+    await tester.tap(find.byKey(const Key('add_exercise_confirm_button')));
+    await tester.pumpAndSettle();
+
+    final days = await repo.watchSplitDays().first;
+    expect(days.single.exercises, hasLength(1));
+    expect(days.single.exercises.single.name, 'Bench Press');
+  });
+
+  testWidgets('deleting an exercise removes it from the day', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final repo = SplitRepository(firestore, 'uid-1');
+    await repo.saveSplitDay(const SplitDay(
+      id: 'monday',
+      label: 'Chest',
+      order: 0,
+      exercises: [ExerciseTarget(name: 'Bench Press', targetSets: 4, targetReps: 8, targetWeight: 60, order: 0)],
+    ));
+
+    await tester.pumpWidget(MaterialApp(
+      home: SplitDayDetailScreen(splitRepo: repo, dayId: 'monday', weekdayLabel: 'Monday'),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('delete_exercise_0')));
+    await tester.pumpAndSettle();
+
+    final days = await repo.watchSplitDays().first;
+    expect(days.single.exercises, isEmpty);
+  });
+}
+```
+
+- [ ] **Step 2: Run to confirm it fails**
+
+```bash
+/c/src/flutter/bin/flutter test test/features/split_editor/split_day_detail_screen_test.dart
+```
+
+Expected: FAIL — file doesn't exist.
+
+- [ ] **Step 3: Implement SplitDayDetailScreen**
+
+`lib/features/split_editor/split_day_detail_screen.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/firestore/split_repository.dart';
+import '../../models/exercise_target.dart';
+import '../../models/split_day.dart';
+
+class SplitDayDetailScreen extends StatefulWidget {
+  const SplitDayDetailScreen({
+    super.key,
+    required this.splitRepo,
+    required this.dayId,
+    required this.weekdayLabel,
+  });
+
+  final SplitRepository splitRepo;
+  final String dayId;
+  final String weekdayLabel;
+
+  @override
+  State<SplitDayDetailScreen> createState() => _SplitDayDetailScreenState();
+}
+
+class _SplitDayDetailScreenState extends State<SplitDayDetailScreen> {
+  final _labelController = TextEditingController();
+  bool _controllerSeeded = false;
+
+  @override
+  void dispose() {
+    _labelController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveLabel(SplitDay? existing, String label) async {
+    if (label.isEmpty) return;
+    await widget.splitRepo.saveSplitDay(SplitDay(
+      id: widget.dayId,
+      label: label,
+      order: existing?.order ?? 0,
+      exercises: existing?.exercises ?? const [],
+    ));
+  }
+
+  Future<void> _clearDay() async {
+    await widget.splitRepo.deleteSplitDay(widget.dayId);
+  }
+
+  Future<void> _addExercise(SplitDay day) async {
+    final nameController = TextEditingController();
+    final setsController = TextEditingController(text: '3');
+    final repsController = TextEditingController(text: '10');
+    final weightController = TextEditingController(text: '0');
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('New exercise'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(key: const Key('exercise_name_field'), controller: nameController, decoration: const InputDecoration(labelText: 'Name')),
+            TextField(key: const Key('exercise_sets_field'), controller: setsController, decoration: const InputDecoration(labelText: 'Sets'), keyboardType: TextInputType.number),
+            TextField(key: const Key('exercise_reps_field'), controller: repsController, decoration: const InputDecoration(labelText: 'Reps'), keyboardType: TextInputType.number),
+            TextField(key: const Key('exercise_weight_field'), controller: weightController, decoration: const InputDecoration(labelText: 'Weight (kg)'), keyboardType: TextInputType.number),
+          ],
+        ),
+        actions: [
+          TextButton(
+            key: const Key('add_exercise_confirm_button'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || nameController.text.trim().isEmpty) return;
+
+    final newExercise = ExerciseTarget(
+      name: nameController.text.trim(),
+      targetSets: int.tryParse(setsController.text) ?? 3,
+      targetReps: int.tryParse(repsController.text) ?? 10,
+      targetWeight: double.tryParse(weightController.text) ?? 0,
+      order: day.exercises.length,
+    );
+
+    await widget.splitRepo.saveSplitDay(day.copyWith(exercises: [...day.exercises, newExercise]));
+  }
+
+  Future<void> _deleteExercise(SplitDay day, int index) async {
+    final updated = [...day.exercises]..removeAt(index);
+    await widget.splitRepo.saveSplitDay(day.copyWith(exercises: updated));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.weekdayLabel)),
+      body: StreamBuilder<List<SplitDay>>(
+        stream: widget.splitRepo.watchSplitDays(),
+        builder: (context, snapshot) {
+          final days = snapshot.data ?? const <SplitDay>[];
+          SplitDay? day;
+          for (final d in days) {
+            if (d.id == widget.dayId) day = d;
+          }
+
+          if (!_controllerSeeded && day != null) {
+            _labelController.text = day.label;
+            _controllerSeeded = true;
+          }
+
+          return Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  key: const Key('split_day_label_field'),
+                  controller: _labelController,
+                  decoration: const InputDecoration(labelText: 'Day label (e.g. Chest & Shoulders)'),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  key: const Key('split_day_save_label_button'),
+                  onPressed: () => _saveLabel(day, _labelController.text.trim()),
+                  child: const Text('Save label'),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Text('Exercises', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Spacer(),
+                    IconButton(
+                      key: const Key('add_exercise_button'),
+                      icon: const Icon(Icons.add),
+                      onPressed: day == null ? null : () => _addExercise(day!),
+                    ),
+                  ],
+                ),
+                Expanded(
+                  child: ListView(
+                    children: [
+                      for (var i = 0; i < (day?.exercises.length ?? 0); i++)
+                        ListTile(
+                          title: Text(day!.exercises[i].name),
+                          subtitle: Text('${day.exercises[i].targetSets}x${day.exercises[i].targetReps} @ ${day.exercises[i].targetWeight}kg'),
+                          trailing: IconButton(
+                            key: Key('delete_exercise_$i'),
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () => _deleteExercise(day!, i),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (day != null) ...[
+                  TextButton(
+                    key: const Key('view_history_button'),
+                    onPressed: () => context.push('/split-history/${widget.dayId}?label=${Uri.encodeComponent(widget.weekdayLabel)}'),
+                    child: const Text('View history'),
+                  ),
+                  TextButton(
+                    key: const Key('clear_day_button'),
+                    onPressed: _clearDay,
+                    child: const Text('Clear this day (mark as rest day)'),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+```
+
+- [ ] **Step 4: Run to confirm all 3 tests pass**
+
+```bash
+/c/src/flutter/bin/flutter test test/features/split_editor/split_day_detail_screen_test.dart
+```
+
+Expected: PASS.
+
+- [ ] **Step 5: Add the composite index needed by `WorkoutLogRepository.watchCompletedLogsForSplitDay`**
+
+That query chains `where('splitDayId', ==)` + `where('status', ==)` + `orderBy('completedAt', desc)`, which requires a composite index on real Firestore (invisible to `fake_cloud_firestore`, which doesn't enforce indexes — so this has been silently missing since Task 5).
+
+`firestore.indexes.json`:
+
+```json
+{
+  "indexes": [
+    {
+      "collectionGroup": "workoutLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "splitDayId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "completedAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
+```
+
+Merge into the existing `firebase.json`'s `"firestore"` key (currently `{"rules": "firestore.rules"}`) so it becomes `{"rules": "firestore.rules", "indexes": "firestore.indexes.json"}`. Do not touch the `flutter`/`emulators` keys.
+
+**Note for your report:** this index must be deployed to the live Firebase project via `firebase deploy --only firestore:indexes` for it to take effect — that's a deploy to shared infrastructure, so don't run it yourself; flag it clearly as a manual follow-up for the human.
+
+- [ ] **Step 6: Wire the `/split-editor/:dayId` route**
+
+In `lib/core/router/app_router.dart`, add (near the existing `/split-history/:dayId` route, same pattern):
+
+```dart
+    GoRoute(
+      path: '/split-editor/:dayId',
+      builder: (context, state) => SplitDayDetailScreen(
+        splitRepo: SplitRepository(FirebaseFirestore.instance, FirebaseAuth.instance.currentUser!.uid),
+        dayId: state.pathParameters['dayId']!,
+        weekdayLabel: state.extra as String? ?? state.pathParameters['dayId']!,
+      ),
+    ),
+```
+
+Add `import '../../features/split_editor/split_day_detail_screen.dart';` at the top.
+
+- [ ] **Step 7: Run the full suite and commit**
+
+```bash
+/c/src/flutter/bin/flutter test
+git add lib/features/split_editor lib/core/router/app_router.dart test/features/split_editor firestore.indexes.json firebase.json
+git commit -m "Add split-day exercise editor, wire /split-editor/:dayId, add composite index for workout history"
+```
+
+---
+
+### Task 19: Router refreshListenable on auth state (fixes log-out navigation)
+
+**Files:**
+- Create: `lib/core/router/go_router_refresh_stream.dart`
+- Modify: `lib/core/router/app_router.dart`
+
+**Interfaces:**
+- Produces: `GoRouterRefreshStream` (a `ChangeNotifier` wrapping any `Stream`), wired as `appRouter`'s `refreshListenable` against `FirebaseAuth.instance.authStateChanges()` — so `redirect` re-runs automatically on every sign-in *and* sign-out, closing the gap where only sign-in/onboarding got a manual `GoRouter.maybeOf(context)?.refresh()` call (Task 9) and sign-out (Task 14's `ProfileScreen`) did not.
+
+- [ ] **Step 1: Implement the refresh-stream helper**
+
+`lib/core/router/go_router_refresh_stream.dart`:
+
+```dart
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+
+/// Turns a Stream into a Listenable so GoRouter can re-run its redirect
+/// callback whenever the stream emits — used here to re-run redirect on
+/// every Firebase auth state change (sign-in AND sign-out), so no call
+/// site needs to remember to call GoRouter.refresh() manually.
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    _subscription = stream.asBroadcastStream().listen((_) => notifyListeners());
+  }
+
+  late final StreamSubscription<dynamic> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}
+```
+
+- [ ] **Step 2: Wire it into the router**
+
+In `lib/core/router/app_router.dart`, add the import and the `refreshListenable` parameter to the `GoRouter(...)` constructor call (keep everything else — `initialLocation`, `redirect`, `routes` — unchanged):
+
+```dart
+import 'go_router_refresh_stream.dart';
+
+final appRouter = GoRouter(
+  initialLocation: '/auth',
+  refreshListenable: GoRouterRefreshStream(FirebaseAuth.instance.authStateChanges()),
+  redirect: (context, state) async {
+    // ... unchanged ...
+  },
+  routes: [
+    // ... unchanged ...
+  ],
+);
+```
+
+- [ ] **Step 3: Run the full suite, paying special attention to smoke_test.dart**
+
+```bash
+/c/src/flutter/bin/flutter test
+```
+
+`appRouter` is a top-level singleton constructed the first time it's referenced, which now eagerly calls `FirebaseAuth.instance.authStateChanges()` at that moment. `test/smoke_test.dart` already sets up `setupFirebaseCoreMocks()` + `Firebase.initializeApp()` in `setUpAll` specifically because the router touches `FirebaseAuth.instance` (added in Task 9) — confirm this still covers `authStateChanges()` too, or extend the mock setup if not. If any test unexpectedly breaks because of this eager stream subscription, investigate and report rather than guessing at a workaround.
+
+Expected: all existing tests still PASS. This task adds no new test file — `redirect`'s logic is unchanged, and the router has no pre-existing dedicated unit test to extend (it's exercised indirectly through `smoke_test.dart` and the screen-level widget tests, none of which construct `appRouter` directly except the smoke test).
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add lib/core/router
+git commit -m "Add refreshListenable so router redirect re-runs on sign-out, not just sign-in"
+```
+
+---
+
+### Task 20: Gate Home behind AppOpenSyncService completion (fixes check-in race)
+
+**Files:**
+- Create: `lib/features/home/home_sync_gate.dart`
+- Create: `test/features/home/home_sync_gate_test.dart`
+- Modify: `lib/core/router/app_router.dart` (`/home` route builds `HomeSyncGate` instead of calling `.sync()` fire-and-forget then immediately returning `HomeScreen`)
+
+**Interfaces:**
+- Consumes: `AppOpenSyncService` (Task 7), `HomeScreen` and its 5 dependencies (Task 11).
+- Produces: `HomeSyncGate({required UserRepository userRepo, required SplitRepository splitRepo, required CheckInRepository checkInRepo, required WorkoutLogRepository workoutLogRepo, required CheckInService checkInService, required AppOpenSyncService syncService})` — shows a loading spinner until `syncService.sync()` completes, only then mounts `HomeScreen`. This closes the race where Home was fully interactive (Check In tappable) while the sync's writes were still in flight, which could silently overwrite a check-in's streak credit.
+
+- [ ] **Step 1: Write the failing test**
+
+`test/features/home/home_sync_gate_test.dart`:
+
+```dart
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:zeus/core/checkin/checkin_service.dart';
+import 'package:zeus/core/firestore/checkin_repository.dart';
+import 'package:zeus/core/firestore/split_repository.dart';
+import 'package:zeus/core/firestore/user_repository.dart';
+import 'package:zeus/core/firestore/workout_log_repository.dart';
+import 'package:zeus/core/sync/app_open_sync_service.dart';
+import 'package:zeus/features/home/home_sync_gate.dart';
+
+void main() {
+  testWidgets('shows a loading indicator until sync completes, then shows Home', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final userRepo = UserRepository(firestore, 'uid-1');
+    final splitRepo = SplitRepository(firestore, 'uid-1');
+    final checkInRepo = CheckInRepository(firestore, 'uid-1');
+    final workoutLogRepo = WorkoutLogRepository(firestore, 'uid-1');
+    await userRepo.createInitialUser(name: 'Vani', email: 'vani@example.com');
+
+    await tester.pumpWidget(MaterialApp(
+      home: HomeSyncGate(
+        userRepo: userRepo,
+        splitRepo: splitRepo,
+        checkInRepo: checkInRepo,
+        workoutLogRepo: workoutLogRepo,
+        checkInService: CheckInService(checkInRepo, userRepo),
+        syncService: AppOpenSyncService(checkInRepo, userRepo),
+      ),
+    ));
+
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byKey(const Key('home_check_in_button')), findsNothing);
+
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.byKey(const Key('home_check_in_button')), findsOneWidget);
+  });
+}
+```
+
+- [ ] **Step 2: Run to confirm it fails**
+
+```bash
+/c/src/flutter/bin/flutter test test/features/home/home_sync_gate_test.dart
+```
+
+Expected: FAIL — file doesn't exist.
+
+- [ ] **Step 3: Implement HomeSyncGate**
+
+`lib/features/home/home_sync_gate.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+import '../../core/checkin/checkin_service.dart';
+import '../../core/firestore/checkin_repository.dart';
+import '../../core/firestore/split_repository.dart';
+import '../../core/firestore/user_repository.dart';
+import '../../core/firestore/workout_log_repository.dart';
+import '../../core/sync/app_open_sync_service.dart';
+import 'home_screen.dart';
+
+/// Runs AppOpenSyncService.sync() once and blocks Home behind it, per spec:
+/// the freeze-reset-then-gap-walk sequence must complete before Home is
+/// interactive, so a Check In tap can never race the sync's writes.
+class HomeSyncGate extends StatefulWidget {
+  const HomeSyncGate({
+    super.key,
+    required this.userRepo,
+    required this.splitRepo,
+    required this.checkInRepo,
+    required this.workoutLogRepo,
+    required this.checkInService,
+    required this.syncService,
+  });
+
+  final UserRepository userRepo;
+  final SplitRepository splitRepo;
+  final CheckInRepository checkInRepo;
+  final WorkoutLogRepository workoutLogRepo;
+  final CheckInService checkInService;
+  final AppOpenSyncService syncService;
+
+  @override
+  State<HomeSyncGate> createState() => _HomeSyncGateState();
+}
+
+class _HomeSyncGateState extends State<HomeSyncGate> {
+  late final Future<void> _syncFuture = widget.syncService.sync();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<void>(
+      future: _syncFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        // A sync failure (e.g. offline on first launch) is treated as
+        // non-fatal — Home still mounts and works against cached/local
+        // state, consistent with the app's offline-tolerant design.
+        return HomeScreen(
+          userRepo: widget.userRepo,
+          splitRepo: widget.splitRepo,
+          checkInRepo: widget.checkInRepo,
+          workoutLogRepo: widget.workoutLogRepo,
+          checkInService: widget.checkInService,
+        );
+      },
+    );
+  }
+}
+```
+
+- [ ] **Step 4: Run to confirm it passes**
+
+```bash
+/c/src/flutter/bin/flutter test test/features/home/home_sync_gate_test.dart
+```
+
+Expected: PASS.
+
+- [ ] **Step 5: Wire it into the router in place of the fire-and-forget call**
+
+In `lib/core/router/app_router.dart`, replace the `/home` route's builder body:
+
+```dart
+    GoRoute(
+      path: '/home',
+      builder: (context, state) {
+        final uid = FirebaseAuth.instance.currentUser!.uid;
+        final firestore = FirebaseFirestore.instance;
+        final userRepo = UserRepository(firestore, uid);
+        final splitRepo = SplitRepository(firestore, uid);
+        final checkInRepo = CheckInRepository(firestore, uid);
+        final workoutLogRepo = WorkoutLogRepository(firestore, uid);
+        return HomeSyncGate(
+          userRepo: userRepo,
+          splitRepo: splitRepo,
+          checkInRepo: checkInRepo,
+          workoutLogRepo: workoutLogRepo,
+          checkInService: CheckInService(checkInRepo, userRepo),
+          syncService: AppOpenSyncService(checkInRepo, userRepo),
+        );
+      },
+    ),
+```
+
+Replace the `HomeScreen` import with `import '../../features/home/home_sync_gate.dart';` (the router no longer references `HomeScreen` directly — only `HomeSyncGate` does, from its own file).
+
+- [ ] **Step 6: Run the full suite and commit**
+
+```bash
+/c/src/flutter/bin/flutter test
+git add lib/features/home/home_sync_gate.dart test/features/home/home_sync_gate_test.dart lib/core/router/app_router.dart
+git commit -m "Gate Home behind AppOpenSyncService completion to close the check-in race"
+```
+
+---
+
+### Task 21: Clamp getLastActivityDate to today (fixes future-rest-day gap-walk lockup)
+
+**Files:**
+- Modify: `lib/core/firestore/checkin_repository.dart`
+- Modify: `lib/core/sync/app_open_sync_service.dart`
+- Modify: `test/core/firestore/checkin_repository_test.dart`
+
+**Interfaces:**
+- Consumes: nothing new.
+- Produces: `CheckInRepository.getLastActivityDate` signature changes from `Future<DateTime?> getLastActivityDate()` to `Future<DateTime?> getLastActivityDate(DateTime today)` — a required positional param. `AppOpenSyncService.sync()`'s one call site updates to pass `effectiveToday`. This closes the bug where marking a future day as a rest day made `getLastActivityDate` return that future date, permanently breaking the gap-walk (its cursor never reaches `today` again).
+
+- [ ] **Step 1: Write the failing tests**
+
+Replace the three `getLastActivityDate` tests in `test/core/firestore/checkin_repository_test.dart` with:
+
+```dart
+  test('getLastActivityDate returns the most recent checkIns doc date at or before today', () async {
+    await repo.writeCheckIn(CheckIn(date: '2026-07-30', type: CheckInType.checkedIn, timestamp: d(2026, 7, 30), workoutLogId: null));
+    await repo.writeCheckIn(CheckIn(date: '2026-08-01', type: CheckInType.checkedIn, timestamp: d(2026, 8, 1), workoutLogId: null));
+
+    final last = await repo.getLastActivityDate(d(2026, 8, 2));
+    expect(last, d(2026, 8, 1));
+  });
+
+  test('getLastActivityDate ignores docs dated after today (e.g. a pre-marked future rest day)', () async {
+    await repo.writeCheckIn(CheckIn(date: '2026-08-01', type: CheckInType.checkedIn, timestamp: d(2026, 8, 1), workoutLogId: null));
+    await repo.writeCheckIn(CheckIn(date: '2026-08-20', type: CheckInType.restDay, timestamp: d(2026, 7, 1), workoutLogId: null));
+
+    final last = await repo.getLastActivityDate(d(2026, 8, 2));
+    expect(last, d(2026, 8, 1), reason: 'a future-dated doc must never be treated as the last activity date');
+  });
+
+  test('getLastActivityDate returns null when no checkIns exist at or before today', () async {
+    final last = await repo.getLastActivityDate(d(2026, 8, 2));
+    expect(last, isNull);
+  });
+```
+
+(These replace the two existing `getLastActivityDate` tests — search for `test('getLastActivityDate` to find and remove the old pair before adding these three.)
+
+- [ ] **Step 2: Run to confirm it fails**
+
+```bash
+/c/src/flutter/bin/flutter test test/core/firestore/checkin_repository_test.dart
+```
+
+Expected: FAIL — current signature takes no arguments.
+
+- [ ] **Step 3: Implement the clamp**
+
+In `lib/core/firestore/checkin_repository.dart`, replace `getLastActivityDate`:
+
+```dart
+  /// Most recent date with any checkIns doc at or before [today], or null
+  /// if none exist. Clamping to <= today matters: a future-dated doc (e.g.
+  /// a rest day pre-marked ahead of time via the calendar) must never be
+  /// treated as "last activity," or the gap-walk's cursor would start
+  /// after today and its loop would never execute again.
+  Future<DateTime?> getLastActivityDate(DateTime today) async {
+    final todayKey = _dateKey(today);
+    final snap = await _collection
+        .where(FieldPath.documentId, isLessThanOrEqualTo: todayKey)
+        .orderBy(FieldPath.documentId, descending: true)
+        .limit(1)
+        .get();
+    if (snap.docs.isEmpty) return null;
+    final parts = snap.docs.first.id.split('-').map(int.parse).toList();
+    return DateTime.utc(parts[0], parts[1], parts[2]);
+  }
+```
+
+- [ ] **Step 4: Run to confirm it passes**
+
+```bash
+/c/src/flutter/bin/flutter test test/core/firestore/checkin_repository_test.dart
+```
+
+Expected: PASS.
+
+- [ ] **Step 5: Update the one call site**
+
+In `lib/core/sync/app_open_sync_service.dart`, change:
+
+```dart
+    final lastActivityDate = await _checkInRepo.getLastActivityDate();
+```
+
+to:
+
+```dart
+    final lastActivityDate = await _checkInRepo.getLastActivityDate(effectiveToday);
+```
+
+- [ ] **Step 6: Run the full suite and commit**
+
+```bash
+/c/src/flutter/bin/flutter test
+git add lib/core/firestore/checkin_repository.dart lib/core/sync/app_open_sync_service.dart test/core/firestore/checkin_repository_test.dart
+git commit -m "Clamp getLastActivityDate to <= today to prevent future rest-days from locking the gap-walk"
+```
+
+---
+
+### Amendment Self-Review
+
+- **Spec coverage:** all 5 Critical findings from the final review addressed — C1/C2 (Task 17+18), C3 (Task 19), C4 (Task 20), C5 (Task 21). I4 (missing composite index) folded into Task 18 as a low-cost bonus while touching adjacent files. T14's deferred "no nav entry point for split history" closed by Task 18's "View history" button.
+- **Not addressed here, deliberately:** I1 (redirect's per-navigation Firestore read), I2 (`currentUser!` null-safety in route builders), I3 (ConnectivityBanner never mounted), I5 (UTC vs device-local "today"), I6 (Riverpod underused), I7 (checkboxes one-way), I8 (`_finish()`'s no-op `maybePop`), I9 (no calendar month navigation), and all Minor findings — these are Important/Minor, don't block the core loop, and are left for a follow-up pass so this amendment stays focused on what blocked "ready to merge."
+- **Type consistency:** `SplitDay.id` is now a closed set of 7 known strings everywhwere it's produced (Tasks 17, 18) and consumed (`home_screen.dart`'s pre-existing `_weekdayIds`, unchanged) — no drift introduced. `CheckInRepository.getLastActivityDate`'s new signature has exactly one call site (Task 21), updated in the same task.
+
+---
+
 ## Self-Review Notes
 
 - **Spec coverage:** Platform/distribution (Task 1), backend choice (Task 2), all 4 Firestore collections (Task 3), check-in/streak decoupling + idempotency + gap-walk + monthly freeze reset ordering (Tasks 4, 6, 7), all 7 screens (Tasks 8–14: Auth, Onboarding, Split Editor, Home, Calendar, Split-Day History, Profile), error handling — no-split prompt (Task 11), offline banner (Task 14), auth/network failure fallback (Firestore's own cache, documented in Task 14) — testing plan's four pillars: unit (Tasks 3–7), widget (Tasks 8–14), security rules (Task 15), manual APK verification (Task 16).
