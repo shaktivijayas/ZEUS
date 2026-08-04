@@ -35,10 +35,18 @@ class CheckInRepository {
     await batch.commit();
   }
 
-  /// Most recent date with any checkIns doc, or null if none exist yet.
-  /// Doc IDs are "YYYY-MM-DD" so they sort correctly as strings.
-  Future<DateTime?> getLastActivityDate() async {
-    final snap = await _collection.orderBy(FieldPath.documentId, descending: true).limit(1).get();
+  /// Most recent date with any checkIns doc at or before [today], or null
+  /// if none exist. Clamping to <= today matters: a future-dated doc (e.g.
+  /// a rest day pre-marked ahead of time via the calendar) must never be
+  /// treated as "last activity," or the gap-walk's cursor would start
+  /// after today and its loop would never execute again.
+  Future<DateTime?> getLastActivityDate(DateTime today) async {
+    final todayKey = _dateKey(today);
+    final snap = await _collection
+        .where(FieldPath.documentId, isLessThanOrEqualTo: todayKey)
+        .orderBy(FieldPath.documentId, descending: true)
+        .limit(1)
+        .get();
     if (snap.docs.isEmpty) return null;
     final parts = snap.docs.first.id.split('-').map(int.parse).toList();
     return DateTime.utc(parts[0], parts[1], parts[2]);

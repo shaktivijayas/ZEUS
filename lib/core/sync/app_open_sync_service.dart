@@ -15,7 +15,7 @@ class AppOpenSyncService {
     final user = await _userRepo.getUser();
     if (user == null) return;
 
-    final lastActivityDate = await _checkInRepo.getLastActivityDate();
+    final lastActivityDate = await _checkInRepo.getLastActivityDate(effectiveToday);
     final existingCheckIns = lastActivityDate == null
         ? <String, CheckIn>{}
         : await _checkInRepo.getCheckInsInRange(lastActivityDate, effectiveToday);

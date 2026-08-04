@@ -22,16 +22,24 @@ void main() {
     expect(checkIn!.workoutLogId, 'log-1', reason: 'second write overwrote the same doc, not a duplicate');
   });
 
-  test('getLastActivityDate returns the most recent checkIns doc date', () async {
+  test('getLastActivityDate returns the most recent checkIns doc date at or before today', () async {
     await repo.writeCheckIn(CheckIn(date: '2026-07-30', type: CheckInType.checkedIn, timestamp: d(2026, 7, 30), workoutLogId: null));
     await repo.writeCheckIn(CheckIn(date: '2026-08-01', type: CheckInType.checkedIn, timestamp: d(2026, 8, 1), workoutLogId: null));
 
-    final last = await repo.getLastActivityDate();
+    final last = await repo.getLastActivityDate(d(2026, 8, 2));
     expect(last, d(2026, 8, 1));
   });
 
-  test('getLastActivityDate returns null when no checkIns exist', () async {
-    final last = await repo.getLastActivityDate();
+  test('getLastActivityDate ignores docs dated after today (e.g. a pre-marked future rest day)', () async {
+    await repo.writeCheckIn(CheckIn(date: '2026-08-01', type: CheckInType.checkedIn, timestamp: d(2026, 8, 1), workoutLogId: null));
+    await repo.writeCheckIn(CheckIn(date: '2026-08-20', type: CheckInType.restDay, timestamp: d(2026, 7, 1), workoutLogId: null));
+
+    final last = await repo.getLastActivityDate(d(2026, 8, 2));
+    expect(last, d(2026, 8, 1), reason: 'a future-dated doc must never be treated as the last activity date');
+  });
+
+  test('getLastActivityDate returns null when no checkIns exist at or before today', () async {
+    final last = await repo.getLastActivityDate(d(2026, 8, 2));
     expect(last, isNull);
   });
 
