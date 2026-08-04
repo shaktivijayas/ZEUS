@@ -6,6 +6,7 @@ import '../../features/calendar/calendar_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/profile/profile_screen.dart';
+import '../../features/split_editor/split_day_detail_screen.dart';
 import '../../features/split_editor/split_editor_screen.dart';
 import '../../features/split_history/split_day_history_screen.dart';
 import '../auth/auth_repository.dart';
@@ -81,6 +82,14 @@ final appRouter = GoRouter(
         workoutLogRepo: WorkoutLogRepository(FirebaseFirestore.instance, FirebaseAuth.instance.currentUser!.uid),
         splitDayId: state.pathParameters['dayId']!,
         splitDayLabel: state.uri.queryParameters['label'] ?? state.pathParameters['dayId']!,
+      ),
+    ),
+    GoRoute(
+      path: '/split-editor/:dayId',
+      builder: (context, state) => SplitDayDetailScreen(
+        splitRepo: SplitRepository(FirebaseFirestore.instance, FirebaseAuth.instance.currentUser!.uid),
+        dayId: state.pathParameters['dayId']!,
+        weekdayLabel: state.extra as String? ?? state.pathParameters['dayId']!,
       ),
     ),
     GoRoute(
