@@ -45,41 +45,18 @@ class _SplitDayDetailScreenState extends State<SplitDayDetailScreen> {
   }
 
   Future<void> _addExercise(SplitDay day) async {
-    final nameController = TextEditingController();
-    final setsController = TextEditingController(text: '3');
-    final repsController = TextEditingController(text: '10');
-    final weightController = TextEditingController(text: '0');
-
-    final confirmed = await showDialog<bool>(
+    final values = await showDialog<_NewExerciseValues>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('New exercise'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(key: const Key('exercise_name_field'), controller: nameController, decoration: const InputDecoration(labelText: 'Name')),
-            TextField(key: const Key('exercise_sets_field'), controller: setsController, decoration: const InputDecoration(labelText: 'Sets'), keyboardType: TextInputType.number),
-            TextField(key: const Key('exercise_reps_field'), controller: repsController, decoration: const InputDecoration(labelText: 'Reps'), keyboardType: TextInputType.number),
-            TextField(key: const Key('exercise_weight_field'), controller: weightController, decoration: const InputDecoration(labelText: 'Weight (kg)'), keyboardType: TextInputType.number),
-          ],
-        ),
-        actions: [
-          TextButton(
-            key: const Key('add_exercise_confirm_button'),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Add'),
-          ),
-        ],
-      ),
+      builder: (context) => const _AddExerciseDialog(),
     );
 
-    if (confirmed != true || nameController.text.trim().isEmpty) return;
+    if (values == null || values.name.trim().isEmpty) return;
 
     final newExercise = ExerciseTarget(
-      name: nameController.text.trim(),
-      targetSets: int.tryParse(setsController.text) ?? 3,
-      targetReps: int.tryParse(repsController.text) ?? 10,
-      targetWeight: double.tryParse(weightController.text) ?? 0,
+      name: values.name.trim(),
+      targetSets: int.tryParse(values.sets) ?? 3,
+      targetReps: int.tryParse(values.reps) ?? 10,
+      targetWeight: double.tryParse(values.weight) ?? 0,
       order: day.exercises.length,
     );
 
@@ -170,6 +147,79 @@ class _SplitDayDetailScreenState extends State<SplitDayDetailScreen> {
           );
         },
       ),
+    );
+  }
+}
+
+/// Raw field values entered in [_AddExerciseDialog]; parsed by the caller
+/// once the dialog (and its controllers) have been popped.
+class _NewExerciseValues {
+  const _NewExerciseValues({
+    required this.name,
+    required this.sets,
+    required this.reps,
+    required this.weight,
+  });
+
+  final String name;
+  final String sets;
+  final String reps;
+  final String weight;
+}
+
+/// Owns its own TextEditingControllers so Flutter disposes them via the
+/// framework's normal State lifecycle — only once this dialog's Element is
+/// actually unmounted, which happens after the dialog's exit transition
+/// completes. Disposing controllers manually right after `showDialog`
+/// resolves races that transition (the popped route's Future completes
+/// before its widgets are removed), so ownership lives here instead.
+class _AddExerciseDialog extends StatefulWidget {
+  const _AddExerciseDialog();
+
+  @override
+  State<_AddExerciseDialog> createState() => _AddExerciseDialogState();
+}
+
+class _AddExerciseDialogState extends State<_AddExerciseDialog> {
+  final _nameController = TextEditingController();
+  final _setsController = TextEditingController(text: '3');
+  final _repsController = TextEditingController(text: '10');
+  final _weightController = TextEditingController(text: '0');
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _setsController.dispose();
+    _repsController.dispose();
+    _weightController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('New exercise'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(key: const Key('exercise_name_field'), controller: _nameController, decoration: const InputDecoration(labelText: 'Name')),
+          TextField(key: const Key('exercise_sets_field'), controller: _setsController, decoration: const InputDecoration(labelText: 'Sets'), keyboardType: TextInputType.number),
+          TextField(key: const Key('exercise_reps_field'), controller: _repsController, decoration: const InputDecoration(labelText: 'Reps'), keyboardType: TextInputType.number),
+          TextField(key: const Key('exercise_weight_field'), controller: _weightController, decoration: const InputDecoration(labelText: 'Weight (kg)'), keyboardType: TextInputType.number),
+        ],
+      ),
+      actions: [
+        TextButton(
+          key: const Key('add_exercise_confirm_button'),
+          onPressed: () => Navigator.of(context).pop(_NewExerciseValues(
+            name: _nameController.text,
+            sets: _setsController.text,
+            reps: _repsController.text,
+            weight: _weightController.text,
+          )),
+          child: const Text('Add'),
+        ),
+      ],
     );
   }
 }
