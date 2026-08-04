@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/auth_screen.dart';
 import '../../features/calendar/calendar_screen.dart';
-import '../../features/home/home_screen.dart';
+import '../../features/home/home_sync_gate.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/split_editor/split_day_detail_screen.dart';
@@ -55,13 +55,13 @@ final appRouter = GoRouter(
         final splitRepo = SplitRepository(firestore, uid);
         final checkInRepo = CheckInRepository(firestore, uid);
         final workoutLogRepo = WorkoutLogRepository(firestore, uid);
-        AppOpenSyncService(checkInRepo, userRepo).sync(); // fire-and-forget; HomeScreen's streams pick up the result
-        return HomeScreen(
+        return HomeSyncGate(
           userRepo: userRepo,
           splitRepo: splitRepo,
           checkInRepo: checkInRepo,
           workoutLogRepo: workoutLogRepo,
           checkInService: CheckInService(checkInRepo, userRepo),
+          syncService: AppOpenSyncService(checkInRepo, userRepo),
         );
       },
     ),
