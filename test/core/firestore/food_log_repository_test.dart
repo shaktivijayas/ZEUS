@@ -75,5 +75,7 @@ void main() {
     final recent = await repo.getRecentEntries(DateTime.utc(2026, 8, 5), limit: 2);
 
     expect(recent, hasLength(2));
+    // Verify entries are returned newest-first by loggedAt timestamp
+    expect(recent.map((e) => e.name).toList(), ['C', 'B']);
   });
 }
