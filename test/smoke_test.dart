@@ -19,7 +19,7 @@ void main() {
   });
 
   testWidgets('app boots and shows the auth screen', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: ZeusApp()));
+    await tester.pumpWidget(ProviderScope(child: ZeusApp()));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('auth_submit_button')), findsOneWidget);
