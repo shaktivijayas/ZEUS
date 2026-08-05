@@ -33,6 +33,9 @@ class UserRepository {
       freezesRemaining: 2,
       freezesResetDate: DateTime.utc(now.year, now.month, now.day).add(const Duration(days: 30)),
       onboarded: false,
+      calorieGoal: null,
+      macroGoals: null,
+      tdeeProfile: null,
     );
     await _doc.set(user.toMap());
   }

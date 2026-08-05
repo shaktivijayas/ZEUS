@@ -1,3 +1,6 @@
+import 'macro_goals.dart';
+import 'tdee_profile.dart';
+
 class AppUser {
   const AppUser({
     required this.uid,
@@ -9,6 +12,9 @@ class AppUser {
     required this.freezesRemaining,
     required this.freezesResetDate,
     required this.onboarded,
+    required this.calorieGoal,
+    required this.macroGoals,
+    required this.tdeeProfile,
   });
 
   final String uid;
@@ -20,6 +26,9 @@ class AppUser {
   final int freezesRemaining;
   final DateTime freezesResetDate;
   final bool onboarded;
+  final int? calorieGoal;
+  final MacroGoals? macroGoals;
+  final TdeeProfile? tdeeProfile;
 
   factory AppUser.fromMap(String uid, Map<String, dynamic> map) {
     return AppUser(
@@ -32,6 +41,13 @@ class AppUser {
       freezesRemaining: map['freezesRemaining'] as int,
       freezesResetDate: DateTime.parse(map['freezesResetDate'] as String),
       onboarded: map['onboarded'] as bool,
+      calorieGoal: map['calorieGoal'] as int?,
+      macroGoals: map['macroGoals'] == null
+          ? null
+          : MacroGoals.fromMap(Map<String, dynamic>.from(map['macroGoals'] as Map)),
+      tdeeProfile: map['tdeeProfile'] == null
+          ? null
+          : TdeeProfile.fromMap(Map<String, dynamic>.from(map['tdeeProfile'] as Map)),
     );
   }
 
@@ -44,6 +60,9 @@ class AppUser {
         'freezesRemaining': freezesRemaining,
         'freezesResetDate': freezesResetDate.toIso8601String(),
         'onboarded': onboarded,
+        'calorieGoal': calorieGoal,
+        'macroGoals': macroGoals?.toMap(),
+        'tdeeProfile': tdeeProfile?.toMap(),
       };
 
   AppUser copyWith({
@@ -54,6 +73,9 @@ class AppUser {
     int? freezesRemaining,
     DateTime? freezesResetDate,
     bool? onboarded,
+    int? calorieGoal,
+    MacroGoals? macroGoals,
+    TdeeProfile? tdeeProfile,
   }) {
     return AppUser(
       uid: uid,
@@ -65,6 +87,9 @@ class AppUser {
       freezesRemaining: freezesRemaining ?? this.freezesRemaining,
       freezesResetDate: freezesResetDate ?? this.freezesResetDate,
       onboarded: onboarded ?? this.onboarded,
+      calorieGoal: calorieGoal ?? this.calorieGoal,
+      macroGoals: macroGoals ?? this.macroGoals,
+      tdeeProfile: tdeeProfile ?? this.tdeeProfile,
     );
   }
 }
