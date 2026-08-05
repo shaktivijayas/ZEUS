@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/app_user.dart';
+import '../../models/macro_goals.dart';
+import '../../models/tdee_profile.dart';
 
 class UserRepository {
   UserRepository(this._firestore, this._uid);
@@ -59,5 +61,17 @@ class UserRepository {
 
   Future<void> setOnboarded() async {
     await _doc.update({'onboarded': true});
+  }
+
+  Future<void> updateCalorieGoal({
+    required int calorieGoal,
+    required MacroGoals macroGoals,
+    required TdeeProfile tdeeProfile,
+  }) async {
+    await _doc.update({
+      'calorieGoal': calorieGoal,
+      'macroGoals': macroGoals.toMap(),
+      'tdeeProfile': tdeeProfile.toMap(),
+    });
   }
 }

@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zeus/core/firestore/user_repository.dart';
+import 'package:zeus/models/macro_goals.dart';
+import 'package:zeus/models/tdee_profile.dart';
 
 void main() {
   late FakeFirebaseFirestore firestore;
@@ -50,5 +52,28 @@ void main() {
   test('getUser returns null when no doc exists', () async {
     final user = await repo.getUser();
     expect(user, isNull);
+  });
+
+  test('updateCalorieGoal writes calorieGoal, macroGoals, and tdeeProfile', () async {
+    await repo.createInitialUser(name: 'Vani', email: 'vani@example.com');
+
+    await repo.updateCalorieGoal(
+      calorieGoal: 2009,
+      macroGoals: const MacroGoals(protein: 151, carbs: 201, fat: 67),
+      tdeeProfile: const TdeeProfile(
+        weightKg: 70,
+        heightCm: 175,
+        age: 25,
+        sex: Sex.male,
+        activityLevel: ActivityLevel.sedentary,
+        goal: CalorieGoalDirection.maintain,
+      ),
+    );
+
+    final user = await repo.getUser();
+    expect(user!.calorieGoal, 2009);
+    expect(user.macroGoals!.protein, 151);
+    expect(user.tdeeProfile!.weightKg, 70);
+    expect(user.tdeeProfile!.sex, Sex.male);
   });
 }
