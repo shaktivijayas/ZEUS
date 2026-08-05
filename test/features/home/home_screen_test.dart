@@ -7,6 +7,7 @@ import 'package:zeus/core/firestore/split_repository.dart';
 import 'package:zeus/core/firestore/user_repository.dart';
 import 'package:zeus/core/firestore/workout_log_repository.dart';
 import 'package:zeus/features/home/home_screen.dart';
+import 'package:zeus/models/exercise_log.dart';
 import 'package:zeus/models/exercise_target.dart';
 import 'package:zeus/models/split_day.dart';
 import 'package:zeus/models/workout_log.dart';
@@ -76,6 +77,25 @@ void main() {
     final log = await workoutLogRepo.getForDate('2026-08-02');
     expect(log, isNotNull);
     expect(log!.status, WorkoutLogStatus.draft);
+  });
+
+  testWidgets('tapping a checked exercise again unchecks it', (tester) async {
+    await pumpHome(tester, userRepo: userRepo, splitRepo: splitRepo, checkInRepo: checkInRepo, workoutLogRepo: workoutLogRepo);
+    await tester.tap(find.byKey(const Key('home_check_in_button')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('exercise_checkbox_Treadmill')));
+    await tester.pumpAndSettle();
+    var log = await workoutLogRepo.getForDate('2026-08-02');
+    expect(log!.exercises.first.status, ExerciseLogStatus.done);
+
+    await tester.tap(find.byKey(const Key('exercise_checkbox_Treadmill')));
+    await tester.pumpAndSettle();
+    log = await workoutLogRepo.getForDate('2026-08-02');
+    expect(log!.exercises.first.status, ExerciseLogStatus.skipped);
+
+    final checkbox = tester.widget<CheckboxListTile>(find.byKey(const Key('exercise_checkbox_Treadmill')));
+    expect(checkbox.value, false);
   });
 
   testWidgets('Finish with no exercises touched creates no workout log doc', (tester) async {

@@ -95,15 +95,18 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _toggleExercise(SplitDay day, int index) async {
     final target = day.exercises[index];
     final baseExercises = _draft?.exercises ?? _blankExerciseLogs(day);
+    final isDone = baseExercises[index].status == ExerciseLogStatus.done;
     final updatedExercises = [
       for (var i = 0; i < baseExercises.length; i++)
         i == index
-            ? baseExercises[i].copyWith(
-                status: ExerciseLogStatus.done,
-                actualSets: target.targetSets,
-                actualReps: target.targetReps,
-                actualWeight: target.targetWeight,
-              )
+            ? (isDone
+                ? baseExercises[i].copyWith(status: ExerciseLogStatus.skipped)
+                : baseExercises[i].copyWith(
+                    status: ExerciseLogStatus.done,
+                    actualSets: target.targetSets,
+                    actualReps: target.targetReps,
+                    actualWeight: target.targetWeight,
+                  ))
             : baseExercises[i],
     ];
 
