@@ -44,12 +44,15 @@ class _CalorieLogScreenState extends State<CalorieLogScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(dateKey),
-        leading: IconButton(
-          key: const Key('calorie_log_prev_day'),
-          icon: const Icon(Icons.chevron_left),
-          onPressed: () => _shiftDay(-1),
-        ),
+        // Both day-navigation controls live in `actions` (not `leading`) so
+        // `leading` is left free for GoRouter/Navigator's default back
+        // button — this screen is pushed from Home via context.push.
         actions: [
+          IconButton(
+            key: const Key('calorie_log_prev_day'),
+            icon: const Icon(Icons.chevron_left),
+            onPressed: () => _shiftDay(-1),
+          ),
           IconButton(
             key: const Key('calorie_log_next_day'),
             icon: const Icon(Icons.chevron_right),

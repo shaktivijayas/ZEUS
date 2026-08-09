@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/firestore/food_log_repository.dart';
 import '../../core/nutrition/food_search_repository.dart';
@@ -41,6 +42,15 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
 
   List<FoodEntry> _recentEntries = const [];
 
+  /// True while a save is in flight, to prevent a double-tap from firing a
+  /// second concurrent read-modify-write against the day's Firestore doc.
+  bool _saving = false;
+
+  /// Feedback shown for invalid input or a save failure. Kept as a single
+  /// field (rather than per-mode) since manual/search are mutually
+  /// exclusive via `_mode`.
+  String? _saveError;
+
   @override
   void initState() {
     super.initState();
@@ -77,9 +87,54 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   }
 
   Future<void> _saveEntry(FoodEntry entry) async {
-    final log = await widget.foodLogRepo.getForDate(widget.date);
-    await widget.foodLogRepo.saveLog(log.withEntryAdded(widget.mealType, entry));
-    if (mounted) Navigator.of(context).maybePop();
+    // Guard against a second tap firing a concurrent read-modify-write
+    // before the first save completes.
+    if (_saving) return;
+    setState(() {
+      _saving = true;
+      _saveError = null;
+    });
+
+    // Capture the app-root ScaffoldMessenger before any pop, so a failure
+    // that surfaces after this screen has already been popped can still
+    // show feedback on the screen the user lands back on.
+    final messenger = ScaffoldMessenger.of(context);
+    final foodLogRepo = widget.foodLogRepo;
+    final date = widget.date;
+    final mealType = widget.mealType;
+
+    // Clears the in-flight flag once the *actual* write settles (not just
+    // once it's been kicked off) so the save button — and the double-submit
+    // guard above — stay engaged for the real duration of the save, even
+    // though we don't block popping on it below.
+    void clearSaving() {
+      if (mounted) setState(() => _saving = false);
+    }
+
+    try {
+      final log = await foodLogRepo.getForDate(date);
+      final writeFuture = foodLogRepo.saveLog(log.withEntryAdded(mealType, entry));
+
+      // Offline-first: Firestore's local cache already makes this write
+      // durable, so don't block popping the screen on the network
+      // round-trip to the server (awaiting it here would leave the user
+      // stuck on this screen indefinitely while offline). A genuine
+      // failure (e.g. permission-denied) is not swallowed though — it's
+      // still caught and surfaced via the messenger captured above.
+      unawaited(writeFuture.then((_) {
+        clearSaving();
+      }).catchError((Object e) {
+        messenger.showSnackBar(SnackBar(content: Text('Failed to save entry: $e')));
+        clearSaving();
+      }));
+
+      if (!mounted) return;
+      Navigator.of(context).maybePop();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _saveError = 'Failed to save entry: $e');
+      clearSaving();
+    }
   }
 
   void _fillManualFrom(FoodEntry entry) {
@@ -94,10 +149,14 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   }
 
   Future<void> _saveManual() async {
+    final name = _nameController.text.trim();
     final calories = double.tryParse(_caloriesController.text);
-    if (_nameController.text.trim().isEmpty || calories == null) return;
+    if (name.isEmpty || calories == null) {
+      setState(() => _saveError = 'Enter a food name and a valid calorie amount.');
+      return;
+    }
     await _saveEntry(FoodEntry(
-      name: _nameController.text.trim(),
+      name: name,
       calories: calories,
       protein: double.tryParse(_proteinController.text) ?? 0,
       carbs: double.tryParse(_carbsController.text) ?? 0,
@@ -112,7 +171,10 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   Future<void> _saveFromSearch() async {
     final result = _selectedResult;
     final quantity = double.tryParse(_quantityController.text);
-    if (result == null || quantity == null) return;
+    if (result == null || quantity == null) {
+      setState(() => _saveError = 'Select a result and enter a valid quantity.');
+      return;
+    }
     await _saveEntry(result.scaledEntry(quantity));
   }
 
@@ -153,13 +215,14 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
               ),
             ],
             const SizedBox(height: 16),
+            if (_saveError != null) Text(_saveError!, key: const Key('save_error_text'), style: const TextStyle(color: Colors.red)),
             if (_mode == _AddFoodMode.manual) ...[
               TextField(key: const Key('manual_name_field'), controller: _nameController, decoration: const InputDecoration(labelText: 'Food name')),
               TextField(key: const Key('manual_calories_field'), controller: _caloriesController, decoration: const InputDecoration(labelText: 'Calories'), keyboardType: TextInputType.number),
               TextField(key: const Key('manual_protein_field'), controller: _proteinController, decoration: const InputDecoration(labelText: 'Protein (g)'), keyboardType: TextInputType.number),
               TextField(key: const Key('manual_carbs_field'), controller: _carbsController, decoration: const InputDecoration(labelText: 'Carbs (g)'), keyboardType: TextInputType.number),
               TextField(key: const Key('manual_fat_field'), controller: _fatController, decoration: const InputDecoration(labelText: 'Fat (g)'), keyboardType: TextInputType.number),
-              ElevatedButton(key: const Key('manual_save_button'), onPressed: _saveManual, child: const Text('Save')),
+              ElevatedButton(key: const Key('manual_save_button'), onPressed: _saving ? null : _saveManual, child: const Text('Save')),
             ] else ...[
               TextField(key: const Key('search_query_field'), controller: _searchController, decoration: const InputDecoration(labelText: 'Search food')),
               ElevatedButton(key: const Key('search_run_button'), onPressed: _runSearch, child: const Text('Search')),
@@ -181,7 +244,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                 ),
               if (_selectedResult != null) ...[
                 TextField(key: const Key('search_quantity_field'), controller: _quantityController, decoration: const InputDecoration(labelText: 'Quantity (g)'), keyboardType: TextInputType.number),
-                ElevatedButton(key: const Key('search_save_button'), onPressed: _saveFromSearch, child: const Text('Save')),
+                ElevatedButton(key: const Key('search_save_button'), onPressed: _saving ? null : _saveFromSearch, child: const Text('Save')),
               ],
             ],
           ],

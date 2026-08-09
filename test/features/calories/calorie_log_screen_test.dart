@@ -87,4 +87,19 @@ void main() {
     expect(find.text('2026-08-06'), findsOneWidget);
     expect(find.byKey(const Key('food_entry_dinner_Rice')), findsOneWidget);
   });
+
+  testWidgets('day-navigation controls live in AppBar.actions, leaving leading free for the back button', (tester) async {
+    await pumpCalorieLog(tester, foodLogRepo: foodLogRepo, userRepo: userRepo);
+
+    final appBar = tester.widget<AppBar>(find.byType(AppBar));
+    expect(appBar.leading, isNull);
+    expect(
+      find.descendant(of: find.byType(AppBar), matching: find.byKey(const Key('calorie_log_prev_day'))),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: find.byType(AppBar), matching: find.byKey(const Key('calorie_log_next_day'))),
+      findsOneWidget,
+    );
+  });
 }

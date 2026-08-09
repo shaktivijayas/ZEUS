@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../models/food_entry.dart';
@@ -45,11 +46,19 @@ class FoodSearchException implements Exception {
 }
 
 class FoodSearchRepository {
-  FoodSearchRepository(this._client);
+  FoodSearchRepository(this._client, {this.timeout = const Duration(seconds: 10)});
 
   final http.Client _client;
 
+  /// How long to wait for Open Food Facts to respond before giving up.
+  /// Overridable (e.g. in tests) to avoid real network-length waits.
+  final Duration timeout;
+
   static final _endpoint = Uri.parse('https://world.openfoodfacts.org/api/v2/search');
+
+  // Open Food Facts' API usage policy requires a descriptive User-Agent
+  // identifying the calling app; requests without one risk throttling/403s.
+  static const _headers = {'User-Agent': 'ZEUS/1.0 (Android)'};
 
   Future<List<FoodSearchResult>> search(String query) async {
     final uri = _endpoint.replace(queryParameters: {
@@ -58,7 +67,12 @@ class FoodSearchRepository {
       'page_size': '20',
     });
 
-    final response = await _client.get(uri);
+    http.Response response;
+    try {
+      response = await _client.get(uri, headers: _headers).timeout(timeout);
+    } on TimeoutException {
+      throw FoodSearchException('Open Food Facts request timed out');
+    }
     if (response.statusCode != 200) {
       throw FoodSearchException('Open Food Facts returned ${response.statusCode}');
     }

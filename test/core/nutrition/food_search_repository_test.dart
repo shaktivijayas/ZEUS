@@ -99,6 +99,32 @@ void main() {
     expect(() => repo.search('oats'), throwsA(isA<FoodSearchException>()));
   });
 
+  test('search sends a descriptive User-Agent header', () async {
+    http.BaseRequest? capturedRequest;
+    final client = MockClient((request) async {
+      capturedRequest = request;
+      return http.Response(jsonEncode({'products': []}), 200);
+    });
+    final repo = FoodSearchRepository(client);
+
+    await repo.search('oats');
+
+    expect(capturedRequest, isNotNull);
+    expect(capturedRequest!.headers['User-Agent'], isNotNull);
+    expect(capturedRequest!.headers['User-Agent'], isNotEmpty);
+  });
+
+  test('search throws FoodSearchException when the request times out', () async {
+    final client = MockClient((request) async {
+      // Simulate a slow/unresponsive network without a real HTTP call.
+      await Future.delayed(const Duration(milliseconds: 200));
+      return http.Response(jsonEncode({'products': []}), 200);
+    });
+    final repo = FoodSearchRepository(client, timeout: const Duration(milliseconds: 20));
+
+    expect(() => repo.search('oats'), throwsA(isA<FoodSearchException>()));
+  });
+
   test('FoodSearchResult.scaledEntry scales per-100g figures by the given quantity', () {
     const result = FoodSearchResult(
       name: 'Rolled Oats',
