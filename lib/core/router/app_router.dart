@@ -1,20 +1,27 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 import '../../features/auth/auth_screen.dart';
 import '../../features/calendar/calendar_screen.dart';
+import '../../features/calories/add_food_screen.dart';
+import '../../features/calories/calorie_log_screen.dart';
 import '../../features/home/home_sync_gate.dart';
 import '../../features/onboarding/onboarding_screen.dart';
+import '../../features/profile/calorie_goal_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/split_editor/split_day_detail_screen.dart';
 import '../../features/split_editor/split_editor_screen.dart';
 import '../../features/split_history/split_day_history_screen.dart';
+import '../../models/food_log.dart';
 import '../auth/auth_repository.dart';
 import '../checkin/checkin_service.dart';
 import '../firestore/checkin_repository.dart';
+import '../firestore/food_log_repository.dart';
 import '../firestore/split_repository.dart';
 import '../firestore/user_repository.dart';
 import '../firestore/workout_log_repository.dart';
+import '../nutrition/food_search_repository.dart';
 import '../sync/app_open_sync_service.dart';
 import 'go_router_refresh_stream.dart';
 
@@ -104,6 +111,36 @@ final appRouter = GoRouter(
           authRepo: AuthRepository(FirebaseAuth.instance, (uid) => UserRepository(firestore, uid)),
         );
       },
+    ),
+    GoRoute(
+      path: '/calories',
+      builder: (context, state) {
+        final uid = FirebaseAuth.instance.currentUser!.uid;
+        final firestore = FirebaseFirestore.instance;
+        return CalorieLogScreen(
+          foodLogRepo: FoodLogRepository(firestore, uid),
+          userRepo: UserRepository(firestore, uid),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/calories/:date/add/:mealType',
+      builder: (context, state) {
+        final uid = FirebaseAuth.instance.currentUser!.uid;
+        final firestore = FirebaseFirestore.instance;
+        return AddFoodScreen(
+          foodLogRepo: FoodLogRepository(firestore, uid),
+          foodSearchRepo: FoodSearchRepository(http.Client()),
+          date: state.pathParameters['date']!,
+          mealType: MealType.fromValue(state.pathParameters['mealType']!),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/profile/calorie-goal',
+      builder: (context, state) => CalorieGoalScreen(
+        userRepo: UserRepository(FirebaseFirestore.instance, FirebaseAuth.instance.currentUser!.uid),
+      ),
     ),
   ],
 );

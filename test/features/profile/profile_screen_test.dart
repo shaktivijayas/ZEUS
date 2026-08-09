@@ -29,4 +29,18 @@ void main() {
 
     expect(auth.currentUser, isNull);
   });
+
+  testWidgets('shows a calorie goal button', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final auth = MockFirebaseAuth(signedIn: true);
+    final userRepo = UserRepository(firestore, 'uid-1');
+    final authRepo = AuthRepository(auth, (uid) => UserRepository(firestore, uid));
+    await userRepo.createInitialUser(name: 'Vani', email: 'vani@example.com');
+
+    await tester.pumpWidget(MaterialApp(home: ProfileScreen(userRepo: userRepo, authRepo: authRepo)));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('profile_calorie_goal_button')), findsOneWidget);
+    expect(find.text('Set calorie goal'), findsOneWidget);
+  });
 }

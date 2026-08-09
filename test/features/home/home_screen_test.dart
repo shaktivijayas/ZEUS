@@ -123,4 +123,10 @@ void main() {
     final log = await workoutLogRepo.getForDate('2026-08-02');
     expect(log!.status, WorkoutLogStatus.completed);
   });
+
+  testWidgets('AppBar has a calories nav icon', (tester) async {
+    await pumpHome(tester, userRepo: userRepo, splitRepo: splitRepo, checkInRepo: checkInRepo, workoutLogRepo: workoutLogRepo);
+
+    expect(find.byKey(const Key('home_calories_button')), findsOneWidget);
+  });
 }

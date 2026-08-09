@@ -152,6 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(icon: const Icon(Icons.calendar_month), onPressed: () => context.push('/calendar')),
           IconButton(icon: const Icon(Icons.edit_calendar), onPressed: () => context.push('/split-editor')),
           IconButton(icon: const Icon(Icons.person), onPressed: () => context.push('/profile')),
+          IconButton(key: const Key('home_calories_button'), icon: const Icon(Icons.restaurant), onPressed: () => context.push('/calories')),
         ],
       ),
       body: StreamBuilder<AppUser?>(
