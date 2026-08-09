@@ -49,13 +49,21 @@ describe('Firestore security rules', () => {
     await assertFails(db.doc('users/bob/checkIns/2026-08-02').set({ type: 'checked_in' }));
   });
 
-  it('a user can write their own checkIns, splitDays, and workoutLogs subcollections', async () => {
+  it('a user cannot write another user\'s foodLogs subcollection', async () => {
+    const alice = testEnv.authenticatedContext('alice');
+    const db = alice.firestore();
+
+    await assertFails(db.doc('users/bob/foodLogs/2026-08-02').set({ meals: {} }));
+  });
+
+  it('a user can write their own checkIns, splitDays, workoutLogs, and foodLogs subcollections', async () => {
     const alice = testEnv.authenticatedContext('alice');
     const db = alice.firestore();
 
     await assertSucceeds(db.doc('users/alice/checkIns/2026-08-02').set({ type: 'checked_in' }));
     await assertSucceeds(db.doc('users/alice/splitDays/monday').set({ label: 'Chest' }));
     await assertSucceeds(db.doc('users/alice/workoutLogs/log1').set({ date: '2026-08-02' }));
+    await assertSucceeds(db.doc('users/alice/foodLogs/2026-08-02').set({ meals: {} }));
   });
 
   it('an unauthenticated request is denied entirely', async () => {
