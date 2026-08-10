@@ -59,6 +59,12 @@ void main() {
     await pumpCalorieLog(tester, foodLogRepo: foodLogRepo, userRepo: userRepo);
 
     expect(find.text('200 / 2000 kcal'), findsOneWidget);
+
+    final totalText = tester.widget<Text>(find.text('200 / 2000 kcal'));
+    final displayStyle = Theme.of(tester.element(find.text('200 / 2000 kcal'))).textTheme.displayMedium!;
+    expect(totalText.style?.fontSize, displayStyle.fontSize, reason: 'the calorie total is the one Display-role number on this screen per DESIGN.md');
+    expect(totalText.style?.fontWeight, displayStyle.fontWeight);
+    expect(totalText.style?.fontFeatures, contains(const FontFeature.tabularFigures()));
   });
 
   testWidgets('shows logged entries under their meal section', (tester) async {

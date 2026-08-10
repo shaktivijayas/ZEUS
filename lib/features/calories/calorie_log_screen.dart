@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/firestore/food_log_repository.dart';
 import '../../core/firestore/user_repository.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 import '../../models/app_user.dart';
 import '../../models/food_log.dart';
 
@@ -86,8 +87,10 @@ class _CalorieLogScreenState extends State<CalorieLogScreen> {
                       ],
                     )
                   else
-                    Text('${log.totalCalories.round()} / $calorieGoal kcal',
-                        style: Theme.of(context).textTheme.headlineSmall),
+                    Text(
+                      '${log.totalCalories.round()} / $calorieGoal kcal',
+                      style: Theme.of(context).textTheme.displayMedium?.copyWith(fontFeatures: AppTypography.tabularFigures),
+                    ),
                   const SizedBox(height: AppSpacing.md),
                   for (final mealType in MealType.values) ...[
                     Row(
