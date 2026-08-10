@@ -74,4 +74,21 @@ void main() {
     expect(find.text('175.0'), findsOneWidget);
     expect(find.text('25'), findsOneWidget);
   });
+
+  testWidgets('sex chips resolve fill/text color from ColorScheme per selection state', (tester) async {
+    await pumpScreen(tester);
+    final scheme = Theme.of(tester.element(find.byType(CalorieGoalScreen))).colorScheme;
+
+    final selected = tester.widget<ChoiceChip>(find.byKey(const Key('tdee_sex_male')));
+    final unselected = tester.widget<ChoiceChip>(find.byKey(const Key('tdee_sex_female')));
+
+    expect(selected.selected, isTrue);
+    expect(selected.selectedColor, scheme.primary);
+    expect(selected.labelStyle?.color, scheme.onPrimary);
+
+    expect(unselected.selected, isFalse);
+    expect(unselected.backgroundColor, scheme.surfaceContainerLowest);
+    expect(unselected.labelStyle?.color, scheme.onSurfaceVariant);
+    expect(unselected.side?.color, scheme.outline);
+  });
 }

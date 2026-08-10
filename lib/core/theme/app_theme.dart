@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_spacing.dart';
 import 'app_typography.dart';
 
 class AppTheme {
@@ -59,23 +60,73 @@ class AppTheme {
     onError: _onErrorDark,
   );
 
-  static ThemeData get light => ThemeData(
-        useMaterial3: true,
-        colorScheme: _lightScheme,
-        scaffoldBackgroundColor: _lightScheme.surface,
-        textTheme: AppTypography.textTheme.apply(
-          bodyColor: _lightScheme.onSurface,
-          displayColor: _lightScheme.onSurface,
-        ),
-      );
+  static ThemeData get light => _themeFor(_lightScheme);
 
-  static ThemeData get dark => ThemeData(
-        useMaterial3: true,
-        colorScheme: _darkScheme,
-        scaffoldBackgroundColor: _darkScheme.surface,
-        textTheme: AppTypography.textTheme.apply(
-          bodyColor: _darkScheme.onSurface,
-          displayColor: _darkScheme.onSurface,
+  static ThemeData get dark => _themeFor(_darkScheme);
+
+  // Builds ThemeData for either scheme from DESIGN.md's Section 5 component
+  // rules, so shape/padding/border-state rules aren't left to Material's
+  // stock defaults (see DESIGN.md "Don't ship a screen using stock,
+  // unstyled Material 3 defaults").
+  static ThemeData _themeFor(ColorScheme scheme) {
+    final textTheme = AppTypography.textTheme.apply(
+      bodyColor: scheme.onSurface,
+      displayColor: scheme.onSurface,
+    );
+    const buttonRadius = BorderRadius.all(Radius.circular(8));
+    const cardRadius = BorderRadius.all(Radius.circular(12));
+
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: scheme,
+      scaffoldBackgroundColor: scheme.surface,
+      textTheme: textTheme,
+      appBarTheme: AppBarTheme(
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: scheme.surfaceContainerLowest,
+        foregroundColor: scheme.onSurface,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: textTheme.headlineMedium,
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: scheme.surfaceContainerLowest,
+        shape: const RoundedRectangleBorder(borderRadius: cardRadius),
+      ),
+      dividerTheme: DividerThemeData(color: scheme.outlineVariant, thickness: 1, space: 1),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: scheme.primary,
+          foregroundColor: scheme.onPrimary,
+          disabledBackgroundColor: scheme.primary.withValues(alpha: 0.4),
+          disabledForegroundColor: scheme.onPrimary.withValues(alpha: 0.4),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: const RoundedRectangleBorder(borderRadius: buttonRadius),
+          elevation: 0,
         ),
-      );
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: scheme.onSurface,
+          shape: const RoundedRectangleBorder(borderRadius: buttonRadius),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        shape: const RoundedRectangleBorder(borderRadius: buttonRadius),
+        showCheckmark: false,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: false,
+        border: OutlineInputBorder(borderSide: BorderSide(color: scheme.outline)),
+        enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: scheme.outline)),
+        focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: scheme.primary, width: 2)),
+        errorBorder: OutlineInputBorder(borderSide: BorderSide(color: scheme.error)),
+        focusedErrorBorder: OutlineInputBorder(borderSide: BorderSide(color: scheme.error, width: 2)),
+        labelStyle: TextStyle(color: scheme.onSurfaceVariant),
+        errorStyle: TextStyle(color: scheme.error),
+      ),
+    );
+  }
 }

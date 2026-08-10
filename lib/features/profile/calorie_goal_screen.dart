@@ -64,8 +64,9 @@ class _CalorieGoalScreenState extends State<CalorieGoalScreen> {
   }
 
   Widget _chipRow<T>(String keyPrefix, List<T> values, T selected, String Function(T) label, void Function(T) onSelect) {
+    final scheme = Theme.of(context).colorScheme;
     return Wrap(
-      spacing: 8,
+      spacing: AppSpacing.sm,
       children: [
         for (final value in values)
           ChoiceChip(
@@ -73,6 +74,10 @@ class _CalorieGoalScreenState extends State<CalorieGoalScreen> {
             label: Text(label(value)),
             selected: value == selected,
             onSelected: (_) => setState(() => onSelect(value)),
+            selectedColor: scheme.primary,
+            backgroundColor: scheme.surfaceContainerLowest,
+            labelStyle: TextStyle(color: value == selected ? scheme.onPrimary : scheme.onSurfaceVariant),
+            side: value == selected ? BorderSide.none : BorderSide(color: scheme.outline),
           ),
       ],
     );
