@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/firestore/split_repository.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../models/exercise_target.dart';
 import '../../models/split_day.dart';
 
@@ -87,7 +88,7 @@ class _SplitDayDetailScreenState extends State<SplitDayDetailScreen> {
           }
 
           return Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -96,13 +97,13 @@ class _SplitDayDetailScreenState extends State<SplitDayDetailScreen> {
                   controller: _labelController,
                   decoration: const InputDecoration(labelText: 'Day label (e.g. Chest & Shoulders)'),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 ElevatedButton(
                   key: const Key('split_day_save_label_button'),
                   onPressed: () => _saveLabel(day, _labelController.text.trim()),
                   child: const Text('Save label'),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.md),
                 Row(
                   children: [
                     const Text('Exercises', style: TextStyle(fontWeight: FontWeight.bold)),

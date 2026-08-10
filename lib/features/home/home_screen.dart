@@ -5,6 +5,7 @@ import '../../core/firestore/checkin_repository.dart';
 import '../../core/firestore/split_repository.dart';
 import '../../core/firestore/user_repository.dart';
 import '../../core/firestore/workout_log_repository.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../models/app_user.dart';
 import '../../models/check_in.dart';
 import '../../models/exercise_log.dart';
@@ -166,12 +167,12 @@ class _HomeScreenState extends State<HomeScreen> {
               final todayDay = days.where((d) => d.id == _weekdayIds[_today.weekday]).toList();
 
               return Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Streak: ${user?.currentStreak ?? 0}', style: Theme.of(context).textTheme.headlineMedium),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.md),
                     if (!_checkedInToday)
                       ElevatedButton(
                         key: const Key('home_check_in_button'),

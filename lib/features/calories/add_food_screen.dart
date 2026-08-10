@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/firestore/food_log_repository.dart';
 import '../../core/nutrition/food_search_repository.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../models/food_entry.dart';
 import '../../models/food_log.dart';
 
@@ -183,7 +184,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Add Food')),
       body: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: ListView(
           children: [
             Row(
@@ -203,7 +204,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
             if (_recentEntries.isNotEmpty) ...[
               const Text('Recently logged', style: TextStyle(fontWeight: FontWeight.bold)),
               Wrap(
-                spacing: 8,
+                spacing: AppSpacing.sm,
                 children: [
                   for (final entry in _recentEntries)
                     ActionChip(
@@ -214,8 +215,8 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                 ],
               ),
             ],
-            const SizedBox(height: 16),
-            if (_saveError != null) Text(_saveError!, key: const Key('save_error_text'), style: const TextStyle(color: Colors.red)),
+            const SizedBox(height: AppSpacing.md),
+            if (_saveError != null) Text(_saveError!, key: const Key('save_error_text'), style: TextStyle(color: Theme.of(context).colorScheme.error)),
             if (_mode == _AddFoodMode.manual) ...[
               TextField(key: const Key('manual_name_field'), controller: _nameController, decoration: const InputDecoration(labelText: 'Food name')),
               TextField(key: const Key('manual_calories_field'), controller: _caloriesController, decoration: const InputDecoration(labelText: 'Calories'), keyboardType: TextInputType.number),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/firestore/food_log_repository.dart';
 import '../../core/firestore/user_repository.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../models/app_user.dart';
 import '../../models/food_log.dart';
 
@@ -70,7 +71,7 @@ class _CalorieLogScreenState extends State<CalorieLogScreen> {
               final log = logSnapshot.data ?? FoodLog.empty(dateKey);
 
               return ListView(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 children: [
                   if (calorieGoal == null)
                     Column(
@@ -87,7 +88,7 @@ class _CalorieLogScreenState extends State<CalorieLogScreen> {
                   else
                     Text('${log.totalCalories.round()} / $calorieGoal kcal',
                         style: Theme.of(context).textTheme.headlineSmall),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.md),
                   for (final mealType in MealType.values) ...[
                     Row(
                       children: [

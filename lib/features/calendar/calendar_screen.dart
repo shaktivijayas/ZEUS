@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/firestore/checkin_repository.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../models/check_in.dart';
 
 String _dateKey(DateTime d) =>
@@ -63,16 +64,18 @@ class _DayCell extends StatelessWidget {
   final CheckIn? checkIn;
   final VoidCallback onTap;
 
-  Color? get _color {
+  // Status is carried by icon shape, not hue — see DESIGN.md's No Second
+  // Green / One Voice rules, which reserve color for the single accent.
+  IconData? get _icon {
     switch (checkIn?.type) {
       case CheckInType.checkedIn:
-        return Colors.green.shade300;
+        return Icons.check;
       case CheckInType.restDay:
-        return Colors.blue.shade100;
+        return Icons.bedtime_outlined;
       case CheckInType.freezeUsed:
-        return Colors.orange.shade200;
+        return Icons.ac_unit;
       case CheckInType.missed:
-        return Colors.red.shade200;
+        return Icons.close;
       case null:
         return null;
     }
@@ -80,14 +83,29 @@ class _DayCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final icon = _icon;
+
     return InkWell(
       key: Key('calendar_day_${_dateKey(date)}'),
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.all(2),
-        color: _color,
+        margin: const EdgeInsets.all(AppSpacing.xs),
         alignment: Alignment.center,
-        child: Text('${date.day}'),
+        decoration: checkIn != null
+            ? BoxDecoration(
+                color: colorScheme.surfaceContainerLowest,
+                border: Border.all(color: colorScheme.outline),
+                borderRadius: BorderRadius.circular(8),
+              )
+            : null,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('${date.day}', style: TextStyle(color: colorScheme.onSurface)),
+            if (icon != null) Icon(icon, size: 14, color: colorScheme.onSurfaceVariant),
+          ],
+        ),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/firestore/split_repository.dart';
 import '../../core/firestore/user_repository.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../models/split_day.dart';
 
 const _weekdays = [
@@ -63,11 +64,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Set up your first split day')),
       body: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           children: [
             const Text('Before you start tracking, set up at least one weekly split day. You can configure the rest — and add exercises — later in the Split Editor.'),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             DropdownButton<String>(
               key: const Key('onboarding_weekday_dropdown'),
               value: _selectedWeekday,
@@ -81,8 +82,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               controller: _labelController,
               decoration: const InputDecoration(labelText: 'Split day name (e.g. Chest & Shoulders)'),
             ),
-            const SizedBox(height: 16),
-            if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
+            const SizedBox(height: AppSpacing.md),
+            if (_error != null) Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ElevatedButton(
               key: const Key('onboarding_save_button'),
               onPressed: _saving ? null : _save,

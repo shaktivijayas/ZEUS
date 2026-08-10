@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_spacing.dart';
 
 class ConnectivityBanner extends StatelessWidget {
   const ConnectivityBanner({super.key, required this.isOffline, required this.child});
@@ -13,17 +14,18 @@ class ConnectivityBanner extends StatelessWidget {
       initialData: false,
       builder: (context, snapshot) {
         final offline = snapshot.data ?? false;
+        final colorScheme = Theme.of(context).colorScheme;
         return Column(
           children: [
             if (offline)
               Container(
                 width: double.infinity,
-                color: Colors.amber.shade700,
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: const Text(
+                color: colorScheme.tertiaryContainer,
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                child: Text(
                   "You're offline — showing cached data",
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.black87),
+                  style: TextStyle(color: colorScheme.onTertiaryContainer),
                 ),
               ),
             Expanded(child: child),

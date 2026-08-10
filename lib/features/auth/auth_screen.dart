@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_providers.dart';
+import '../../core/theme/app_spacing.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
@@ -62,12 +63,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(_isSignUp ? 'Create your account' : 'Welcome back', style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.lg),
               if (_isSignUp)
                 TextField(
                   key: const Key('auth_name_field'),
@@ -86,8 +87,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 decoration: const InputDecoration(labelText: 'Password'),
                 obscureText: true,
               ),
-              const SizedBox(height: 16),
-              if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
+              const SizedBox(height: AppSpacing.md),
+              if (_error != null) Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               ElevatedButton(
                 key: const Key('auth_submit_button'),
                 onPressed: _submitting ? null : _submit,

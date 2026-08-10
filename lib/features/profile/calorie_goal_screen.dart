@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/firestore/user_repository.dart';
 import '../../core/nutrition/tdee_calculator.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../models/app_user.dart';
 import '../../models/tdee_profile.dart';
 
@@ -91,7 +92,7 @@ class _CalorieGoalScreenState extends State<CalorieGoalScreen> {
           }
 
           return Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: ListView(
               children: [
                 TextField(
@@ -112,16 +113,16 @@ class _CalorieGoalScreenState extends State<CalorieGoalScreen> {
                   decoration: const InputDecoration(labelText: 'Age'),
                   keyboardType: TextInputType.number,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 const Text('Sex'),
                 _chipRow('tdee_sex', Sex.values, _sex, (s) => s.value, (s) => _sex = s),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 const Text('Activity level'),
                 _chipRow('tdee_activity', ActivityLevel.values, _activityLevel, (a) => a.value, (a) => _activityLevel = a),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 const Text('Goal'),
                 _chipRow('tdee_goal', CalorieGoalDirection.values, _goal, (g) => g.value, (g) => _goal = g),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.md),
                 ElevatedButton(
                   key: const Key('tdee_save_button'),
                   onPressed: _save,
