@@ -75,6 +75,17 @@ void main() {
     expect(find.text('25'), findsOneWidget);
   });
 
+  testWidgets('tapping save with empty fields shows a visible validation error and does not write', (tester) async {
+    await pumpScreen(tester);
+
+    await tester.tap(find.byKey(const Key('tdee_save_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('tdee_validation_error_text')), findsOneWidget);
+    final user = await userRepo.getUser();
+    expect(user!.calorieGoal, isNull, reason: 'invalid form must not write a calorie goal');
+  });
+
   testWidgets('sex chips resolve fill/text color from ColorScheme per selection state', (tester) async {
     await pumpScreen(tester);
     final scheme = Theme.of(tester.element(find.byType(CalorieGoalScreen))).colorScheme;

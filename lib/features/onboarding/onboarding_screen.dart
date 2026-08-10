@@ -38,7 +38,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _save() async {
-    if (_labelController.text.trim().isEmpty) return;
+    if (_labelController.text.trim().isEmpty) {
+      setState(() => _error = 'Enter a split day name.');
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;
@@ -83,7 +86,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               decoration: const InputDecoration(labelText: 'Split day name (e.g. Chest & Shoulders)'),
             ),
             const SizedBox(height: AppSpacing.md),
-            if (_error != null) Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            if (_error != null)
+              Text(
+                _error!,
+                key: const Key('onboarding_label_error_text'),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             ElevatedButton(
               key: const Key('onboarding_save_button'),
               onPressed: _saving ? null : _save,

@@ -24,6 +24,7 @@ class SplitDayDetailScreen extends StatefulWidget {
 class _SplitDayDetailScreenState extends State<SplitDayDetailScreen> {
   final _labelController = TextEditingController();
   bool _controllerSeeded = false;
+  String? _labelError;
 
   @override
   void dispose() {
@@ -32,7 +33,11 @@ class _SplitDayDetailScreenState extends State<SplitDayDetailScreen> {
   }
 
   Future<void> _saveLabel(SplitDay? existing, String label) async {
-    if (label.isEmpty) return;
+    if (label.isEmpty) {
+      setState(() => _labelError = 'Enter a day label.');
+      return;
+    }
+    setState(() => _labelError = null);
     await widget.splitRepo.saveSplitDay(SplitDay(
       id: widget.dayId,
       label: label,
@@ -51,7 +56,7 @@ class _SplitDayDetailScreenState extends State<SplitDayDetailScreen> {
       builder: (context) => const _AddExerciseDialog(),
     );
 
-    if (values == null || values.name.trim().isEmpty) return;
+    if (values == null) return;
 
     final newExercise = ExerciseTarget(
       name: values.name.trim(),
@@ -98,6 +103,15 @@ class _SplitDayDetailScreenState extends State<SplitDayDetailScreen> {
                   decoration: const InputDecoration(labelText: 'Day label (e.g. Chest & Shoulders)'),
                 ),
                 const SizedBox(height: AppSpacing.sm),
+                if (_labelError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: Text(
+                      _labelError!,
+                      key: const Key('split_day_label_error_text'),
+                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ),
                 ElevatedButton(
                   key: const Key('split_day_save_label_button'),
                   onPressed: () => _saveLabel(day, _labelController.text.trim()),
@@ -186,6 +200,7 @@ class _AddExerciseDialogState extends State<_AddExerciseDialog> {
   final _setsController = TextEditingController(text: '3');
   final _repsController = TextEditingController(text: '10');
   final _weightController = TextEditingController(text: '0');
+  String? _nameError;
 
   @override
   void dispose() {
@@ -196,6 +211,19 @@ class _AddExerciseDialogState extends State<_AddExerciseDialog> {
     super.dispose();
   }
 
+  void _confirm() {
+    if (_nameController.text.trim().isEmpty) {
+      setState(() => _nameError = 'Enter an exercise name.');
+      return;
+    }
+    Navigator.of(context).pop(_NewExerciseValues(
+      name: _nameController.text,
+      sets: _setsController.text,
+      reps: _repsController.text,
+      weight: _weightController.text,
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -204,6 +232,12 @@ class _AddExerciseDialogState extends State<_AddExerciseDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(key: const Key('exercise_name_field'), controller: _nameController, decoration: const InputDecoration(labelText: 'Name')),
+          if (_nameError != null)
+            Text(
+              _nameError!,
+              key: const Key('exercise_name_error_text'),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           TextField(key: const Key('exercise_sets_field'), controller: _setsController, decoration: const InputDecoration(labelText: 'Sets'), keyboardType: TextInputType.number),
           TextField(key: const Key('exercise_reps_field'), controller: _repsController, decoration: const InputDecoration(labelText: 'Reps'), keyboardType: TextInputType.number),
           TextField(key: const Key('exercise_weight_field'), controller: _weightController, decoration: const InputDecoration(labelText: 'Weight (kg)'), keyboardType: TextInputType.number),
@@ -212,12 +246,7 @@ class _AddExerciseDialogState extends State<_AddExerciseDialog> {
       actions: [
         TextButton(
           key: const Key('add_exercise_confirm_button'),
-          onPressed: () => Navigator.of(context).pop(_NewExerciseValues(
-            name: _nameController.text,
-            sets: _setsController.text,
-            reps: _repsController.text,
-            weight: _weightController.text,
-          )),
+          onPressed: _confirm,
           child: const Text('Add'),
         ),
       ],

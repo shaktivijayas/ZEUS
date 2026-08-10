@@ -115,7 +115,9 @@ void main() {
     await tester.tap(find.byKey(const Key('search_run_button')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('search_error_text')), findsOneWidget);
+    final errorText = tester.widget<Text>(find.byKey(const Key('search_error_text')));
+    final scheme = Theme.of(tester.element(find.byKey(const Key('search_error_text')))).colorScheme;
+    expect(errorText.style?.color, scheme.error);
     await tester.tap(find.byKey(const Key('search_switch_to_manual')));
     await tester.pumpAndSettle();
 

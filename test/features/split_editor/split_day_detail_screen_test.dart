@@ -25,6 +25,44 @@ void main() {
     expect(days.single.label, 'Chest & Shoulders');
   });
 
+  testWidgets('tapping save label with an empty label shows a visible error and does not write', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final repo = SplitRepository(firestore, 'uid-1');
+
+    await tester.pumpWidget(MaterialApp(
+      home: SplitDayDetailScreen(splitRepo: repo, dayId: 'monday', weekdayLabel: 'Monday'),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('split_day_save_label_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('split_day_label_error_text')), findsOneWidget);
+    final days = await repo.watchSplitDays().first;
+    expect(days, isEmpty);
+  });
+
+  testWidgets('confirming a new exercise with an empty name shows a visible error and keeps the dialog open', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final repo = SplitRepository(firestore, 'uid-1');
+    await repo.saveSplitDay(const SplitDay(id: 'monday', label: 'Chest', order: 0, exercises: []));
+
+    await tester.pumpWidget(MaterialApp(
+      home: SplitDayDetailScreen(splitRepo: repo, dayId: 'monday', weekdayLabel: 'Monday'),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('add_exercise_button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('add_exercise_confirm_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('exercise_name_error_text')), findsOneWidget);
+    expect(find.byKey(const Key('exercise_name_field')), findsOneWidget, reason: 'dialog must stay open on invalid input');
+    final days = await repo.watchSplitDays().first;
+    expect(days.single.exercises, isEmpty);
+  });
+
   testWidgets('adding an exercise appends it to the day', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final repo = SplitRepository(firestore, 'uid-1');

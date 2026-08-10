@@ -228,7 +228,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
               TextField(key: const Key('search_query_field'), controller: _searchController, decoration: const InputDecoration(labelText: 'Search food')),
               ElevatedButton(key: const Key('search_run_button'), onPressed: _runSearch, child: const Text('Search')),
               if (_searchError != null) ...[
-                Text(_searchError!, key: const Key('search_error_text')),
+                Text(_searchError!, key: const Key('search_error_text'), style: TextStyle(color: Theme.of(context).colorScheme.error)),
                 TextButton(
                   key: const Key('search_switch_to_manual'),
                   onPressed: () => setState(() => _mode = _AddFoodMode.manual),

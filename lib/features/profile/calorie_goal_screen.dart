@@ -22,6 +22,7 @@ class _CalorieGoalScreenState extends State<CalorieGoalScreen> {
   ActivityLevel _activityLevel = ActivityLevel.sedentary;
   CalorieGoalDirection _goal = CalorieGoalDirection.maintain;
   bool _seeded = false;
+  String? _validationError;
 
   @override
   void dispose() {
@@ -44,7 +45,11 @@ class _CalorieGoalScreenState extends State<CalorieGoalScreen> {
     final weight = double.tryParse(_weightController.text);
     final height = double.tryParse(_heightController.text);
     final age = int.tryParse(_ageController.text);
-    if (weight == null || height == null || age == null) return;
+    if (weight == null || height == null || age == null) {
+      setState(() => _validationError = 'Enter a valid weight, height, and age.');
+      return;
+    }
+    setState(() => _validationError = null);
 
     final profile = TdeeProfile(
       weightKg: weight,
@@ -128,6 +133,15 @@ class _CalorieGoalScreenState extends State<CalorieGoalScreen> {
                 const Text('Goal'),
                 _chipRow('tdee_goal', CalorieGoalDirection.values, _goal, (g) => g.value, (g) => _goal = g),
                 const SizedBox(height: AppSpacing.md),
+                if (_validationError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: Text(
+                      _validationError!,
+                      key: const Key('tdee_validation_error_text'),
+                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ),
                 ElevatedButton(
                   key: const Key('tdee_save_button'),
                   onPressed: _save,

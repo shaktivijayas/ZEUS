@@ -30,4 +30,24 @@ void main() {
     expect(days.single.id, 'monday', reason: 'default dropdown selection is Monday');
     expect(days.single.label, 'Chest & Shoulders');
   });
+
+  testWidgets('tapping save with an empty label shows a visible error and does not onboard', (tester) async {
+    final firestore = FakeFirebaseFirestore();
+    final userRepo = UserRepository(firestore, 'uid-1');
+    final splitRepo = SplitRepository(firestore, 'uid-1');
+    await userRepo.createInitialUser(name: 'Vani', email: 'vani@example.com');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: OnboardingScreen(userRepo: userRepo, splitRepo: splitRepo),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('onboarding_save_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('onboarding_label_error_text')), findsOneWidget);
+    final user = await userRepo.getUser();
+    expect(user!.onboarded, isFalse);
+  });
 }
