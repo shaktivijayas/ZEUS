@@ -24,6 +24,8 @@ class ZeusApp extends StatelessWidget {
       title: 'ZEUS',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: ThemeMode.system,
       routerConfig: appRouter,
       builder: (context, child) => ConnectivityBanner(
         isOffline: _connectivityService.isOffline,
