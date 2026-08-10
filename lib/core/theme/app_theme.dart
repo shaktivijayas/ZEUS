@@ -103,6 +103,7 @@ class AppTheme {
           disabledForegroundColor: scheme.onPrimary.withValues(alpha: 0.4),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           shape: const RoundedRectangleBorder(borderRadius: buttonRadius),
+          minimumSize: const Size(64, 48),
           elevation: 0,
         ),
       ),
@@ -110,6 +111,7 @@ class AppTheme {
         style: TextButton.styleFrom(
           foregroundColor: scheme.onSurface,
           shape: const RoundedRectangleBorder(borderRadius: buttonRadius),
+          minimumSize: const Size(64, 48),
         ),
       ),
       chipTheme: ChipThemeData(

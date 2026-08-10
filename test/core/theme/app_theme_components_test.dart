@@ -16,12 +16,14 @@ void main() {
         expect(style.padding?.resolve({}), const EdgeInsets.symmetric(horizontal: 24, vertical: 12));
         expect(style.backgroundColor?.resolve({}), scheme.primary);
         expect(style.foregroundColor?.resolve({}), scheme.onPrimary);
+        expect(style.minimumSize?.resolve({})?.height, greaterThanOrEqualTo(48));
       });
 
       test('text (secondary) button: no fill, onSurface text', () {
         final style = theme.textButtonTheme.style!;
         expect(style.backgroundColor?.resolve({}), isNull);
         expect(style.foregroundColor?.resolve({}), scheme.onSurface);
+        expect(style.minimumSize?.resolve({})?.height, greaterThanOrEqualTo(48));
       });
 
       test('cards: 12px radius, flat at rest, surfaceContainerLowest fill', () {
