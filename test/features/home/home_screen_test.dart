@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zeus/core/checkin/checkin_service.dart';
 import 'package:zeus/core/firestore/checkin_repository.dart';
+import 'package:zeus/core/firestore/food_log_repository.dart';
 import 'package:zeus/core/firestore/split_repository.dart';
 import 'package:zeus/core/firestore/user_repository.dart';
 import 'package:zeus/core/firestore/workout_log_repository.dart';
@@ -17,13 +18,17 @@ Future<void> pumpHome(WidgetTester tester, {
   required SplitRepository splitRepo,
   required CheckInRepository checkInRepo,
   required WorkoutLogRepository workoutLogRepo,
+  required FoodLogRepository foodLogRepo,
 }) async {
+  await tester.binding.setSurfaceSize(const Size(400, 1400));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
   await tester.pumpWidget(MaterialApp(
     home: HomeScreen(
       userRepo: userRepo,
       splitRepo: splitRepo,
       checkInRepo: checkInRepo,
       workoutLogRepo: workoutLogRepo,
+      foodLogRepo: foodLogRepo,
       checkInService: CheckInService(checkInRepo, userRepo),
       today: DateTime.utc(2026, 8, 2), // a Sunday
     ),
@@ -37,6 +42,7 @@ void main() {
   late SplitRepository splitRepo;
   late CheckInRepository checkInRepo;
   late WorkoutLogRepository workoutLogRepo;
+  late FoodLogRepository foodLogRepo;
 
   setUp(() async {
     firestore = FakeFirebaseFirestore();
@@ -44,6 +50,7 @@ void main() {
     splitRepo = SplitRepository(firestore, 'uid-1');
     checkInRepo = CheckInRepository(firestore, 'uid-1');
     workoutLogRepo = WorkoutLogRepository(firestore, 'uid-1');
+    foodLogRepo = FoodLogRepository(firestore, 'uid-1');
     await userRepo.createInitialUser(name: 'Vani', email: 'vani@example.com');
     await splitRepo.saveSplitDay(const SplitDay(
       id: 'sunday',
@@ -54,7 +61,7 @@ void main() {
   });
 
   testWidgets('tapping Check In grants streak credit and reveals the checklist', (tester) async {
-    await pumpHome(tester, userRepo: userRepo, splitRepo: splitRepo, checkInRepo: checkInRepo, workoutLogRepo: workoutLogRepo);
+    await pumpHome(tester, userRepo: userRepo, splitRepo: splitRepo, checkInRepo: checkInRepo, workoutLogRepo: workoutLogRepo, foodLogRepo: foodLogRepo);
 
     expect(find.text('Treadmill'), findsNothing);
 
@@ -67,7 +74,7 @@ void main() {
   });
 
   testWidgets('checking off the first exercise creates a draft workout log', (tester) async {
-    await pumpHome(tester, userRepo: userRepo, splitRepo: splitRepo, checkInRepo: checkInRepo, workoutLogRepo: workoutLogRepo);
+    await pumpHome(tester, userRepo: userRepo, splitRepo: splitRepo, checkInRepo: checkInRepo, workoutLogRepo: workoutLogRepo, foodLogRepo: foodLogRepo);
     await tester.tap(find.byKey(const Key('home_check_in_button')));
     await tester.pumpAndSettle();
 
@@ -80,7 +87,7 @@ void main() {
   });
 
   testWidgets('tapping a checked exercise again unchecks it', (tester) async {
-    await pumpHome(tester, userRepo: userRepo, splitRepo: splitRepo, checkInRepo: checkInRepo, workoutLogRepo: workoutLogRepo);
+    await pumpHome(tester, userRepo: userRepo, splitRepo: splitRepo, checkInRepo: checkInRepo, workoutLogRepo: workoutLogRepo, foodLogRepo: foodLogRepo);
     await tester.tap(find.byKey(const Key('home_check_in_button')));
     await tester.pumpAndSettle();
 
@@ -99,7 +106,7 @@ void main() {
   });
 
   testWidgets('Finish with no exercises touched creates no workout log doc', (tester) async {
-    await pumpHome(tester, userRepo: userRepo, splitRepo: splitRepo, checkInRepo: checkInRepo, workoutLogRepo: workoutLogRepo);
+    await pumpHome(tester, userRepo: userRepo, splitRepo: splitRepo, checkInRepo: checkInRepo, workoutLogRepo: workoutLogRepo, foodLogRepo: foodLogRepo);
     await tester.tap(find.byKey(const Key('home_check_in_button')));
     await tester.pumpAndSettle();
 
@@ -111,7 +118,7 @@ void main() {
   });
 
   testWidgets('Finish after touching an exercise completes the draft', (tester) async {
-    await pumpHome(tester, userRepo: userRepo, splitRepo: splitRepo, checkInRepo: checkInRepo, workoutLogRepo: workoutLogRepo);
+    await pumpHome(tester, userRepo: userRepo, splitRepo: splitRepo, checkInRepo: checkInRepo, workoutLogRepo: workoutLogRepo, foodLogRepo: foodLogRepo);
     await tester.tap(find.byKey(const Key('home_check_in_button')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('exercise_checkbox_Treadmill')));
@@ -125,7 +132,7 @@ void main() {
   });
 
   testWidgets('AppBar has a calories nav icon', (tester) async {
-    await pumpHome(tester, userRepo: userRepo, splitRepo: splitRepo, checkInRepo: checkInRepo, workoutLogRepo: workoutLogRepo);
+    await pumpHome(tester, userRepo: userRepo, splitRepo: splitRepo, checkInRepo: checkInRepo, workoutLogRepo: workoutLogRepo, foodLogRepo: foodLogRepo);
 
     expect(find.byKey(const Key('home_calories_button')), findsOneWidget);
   });

@@ -17,6 +17,7 @@ void main() {
       'split_editor_screen.dart',
       'split_day_detail_screen.dart',
       'split_day_history_screen.dart',
+      'home_screen.dart',
     };
     final targets = [
       ...Directory('lib/features')
