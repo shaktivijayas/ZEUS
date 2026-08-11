@@ -20,4 +20,9 @@ class ApplePalette {
   static const divider = Color(0xFF2C2C2E);
   static const ringTrack = Color(0xFF400010);
   static const tabBarBackground = Color(0xFF121212);
+  // Apple's iOS system red — used for warning-style counts (e.g. "0
+  // exercises") where the Move/Calorie pink accent would read as an
+  // unrelated highlight rather than an alert.
+  static const systemRed = Color(0xFFFF3B30);
+  static const chevron = Color(0xFFC4C4C6);
 }

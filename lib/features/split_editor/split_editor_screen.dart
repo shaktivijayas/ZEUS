@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/firestore/split_repository.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/apple_fitness_palette.dart';
@@ -15,6 +17,19 @@ const _weekdays = [
   ('sunday', 'Sunday'),
 ];
 
+/// Apple's real SF Pro can't be licensed/bundled for Android, so Inter — the
+/// closest freely-licensed geometric sans and the community's standard
+/// SF Pro stand-in on non-Apple platforms — is used for this screen's
+/// Apple-styled headings and labels instead of the app-wide Roboto type
+/// scale (AppTypography).
+TextStyle _appleFont({required double fontSize, required FontWeight fontWeight, required Color color, double? letterSpacing}) {
+  return GoogleFonts.inter(fontSize: fontSize, fontWeight: fontWeight, color: color, letterSpacing: letterSpacing);
+}
+
+/// Displays user-entered split day labels in sentence case regardless of how
+/// they were typed, without mutating the stored value.
+String _sentenceCase(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+
 class SplitEditorScreen extends StatelessWidget {
   const SplitEditorScreen({super.key, required this.splitRepo});
 
@@ -26,9 +41,11 @@ class SplitEditorScreen extends StatelessWidget {
       backgroundColor: ApplePalette.background,
       appBar: AppBar(
         backgroundColor: ApplePalette.background,
-        foregroundColor: ApplePalette.primaryText,
         elevation: 0,
-        title: const Text('Split Editor', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+        // Explicit color (not just `foregroundColor`) because the app-wide
+        // AppBarTheme.titleTextStyle (Roboto, light-theme ink) otherwise
+        // wins the merge and renders near-invisible on this black AppBar.
+        title: Text('Split Editor', style: _appleFont(fontSize: 22, fontWeight: FontWeight.bold, color: ApplePalette.primaryText)),
       ),
       body: StreamBuilder<List<SplitDay>>(
         stream: splitRepo.watchSplitDays(),
@@ -42,45 +59,34 @@ class SplitEditorScreen extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                   child: Material(
                     color: ApplePalette.card,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(12),
                     child: InkWell(
                       key: Key('weekday_row_$id'),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(12),
                       onTap: () => context.push('/split-editor/$id', extra: name),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md + 5),
                         child: Row(
                           children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: const BoxDecoration(color: ApplePalette.background, shape: BoxShape.circle),
-                              alignment: Alignment.center,
-                              child: Text(
-                                name.substring(0, 2).toUpperCase(),
-                                style: const TextStyle(color: ApplePalette.green, fontWeight: FontWeight.bold, fontSize: 12),
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.md),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(name, style: const TextStyle(color: ApplePalette.primaryText, fontWeight: FontWeight.bold, fontSize: 17)),
+                                  Text(name, style: _appleFont(fontSize: 17, fontWeight: FontWeight.bold, color: ApplePalette.primaryText)),
                                   const SizedBox(height: 2),
                                   byId[id] == null
-                                      ? const Text(
+                                      ? Text(
                                           'Rest day — tap to configure',
-                                          style: TextStyle(color: ApplePalette.secondaryText, fontSize: 15),
+                                          style: _appleFont(fontSize: 15, fontWeight: FontWeight.w300, color: ApplePalette.secondaryText),
                                         )
                                       : Text.rich(
                                           TextSpan(
-                                            style: const TextStyle(color: ApplePalette.secondaryText, fontSize: 15),
+                                            style: _appleFont(fontSize: 15, fontWeight: FontWeight.w300, color: ApplePalette.secondaryText),
                                             children: [
-                                              TextSpan(text: '${byId[id]!.label} · '),
+                                              TextSpan(text: '${_sentenceCase(byId[id]!.label)} · '),
                                               TextSpan(
                                                 text: '${byId[id]!.exercises.length} exercises',
-                                                style: const TextStyle(color: ApplePalette.pink, fontWeight: FontWeight.w600),
+                                                style: const TextStyle(color: ApplePalette.systemRed, fontWeight: FontWeight.w600),
                                               ),
                                             ],
                                           ),
@@ -88,7 +94,7 @@ class SplitEditorScreen extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            const Icon(Icons.chevron_right, color: ApplePalette.dateGray),
+                            const Icon(CupertinoIcons.chevron_forward, color: ApplePalette.chevron, size: 18),
                           ],
                         ),
                       ),
