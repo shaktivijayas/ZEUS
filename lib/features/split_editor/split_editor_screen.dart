@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/firestore/split_repository.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/apple_fitness_palette.dart';
+import '../../core/widgets/apple_bottom_bar.dart';
 import '../../models/split_day.dart';
 
 const _weekdays = [
@@ -42,10 +43,24 @@ class SplitEditorScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: ApplePalette.background,
         elevation: 0,
+        // Cupertino's plain chevron (not Material's arrow_back) with an
+        // explicit accent color — like the title below, the app-wide
+        // AppBarTheme would otherwise hand this a near-invisible color and
+        // a heavier Material arrow shape.
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.back, color: ApplePalette.green, size: 28),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
         // Explicit color (not just `foregroundColor`) because the app-wide
         // AppBarTheme.titleTextStyle (Roboto, light-theme ink) otherwise
         // wins the merge and renders near-invisible on this black AppBar.
         title: Text('Split Editor', style: _appleFont(fontSize: 22, fontWeight: FontWeight.bold, color: ApplePalette.primaryText)),
+      ),
+      bottomNavigationBar: AppleBottomBar(
+        active: AppleBottomTab.split,
+        onSummary: () => Navigator.of(context).maybePop(),
+        onCalendar: () => context.push('/calendar'),
+        onCalories: () => context.push('/calories'),
       ),
       body: StreamBuilder<List<SplitDay>>(
         stream: splitRepo.watchSplitDays(),
