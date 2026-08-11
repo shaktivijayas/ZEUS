@@ -7,8 +7,15 @@ import 'package:flutter_test/flutter_test.dart';
 /// spacing-token equivalent) across every screen, not just the theme layer.
 void main() {
   test('screens resolve color and spacing through design tokens, not raw literals', () {
+    // auth_screen.dart is excluded: it deliberately pins its own fixed
+    // dark/neon palette to match an exact external login mockup, rather
+    // than drawing from the app-wide ColorScheme (see the file's header
+    // comment).
     final targets = [
-      ...Directory('lib/features').listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart')),
+      ...Directory('lib/features')
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.dart') && !f.path.endsWith('auth_screen.dart')),
       File('lib/core/connectivity/connectivity_banner.dart'),
     ];
 

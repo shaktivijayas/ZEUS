@@ -27,6 +27,8 @@ void main() {
     await tester.enterText(find.byKey(const Key('auth_name_field')), 'Vani');
     await tester.enterText(find.byKey(const Key('auth_email_field')), 'vani@example.com');
     await tester.enterText(find.byKey(const Key('auth_password_field')), 'hunter22');
+    await tester.pump();
+    await tester.ensureVisible(find.byKey(const Key('auth_submit_button')));
     await tester.tap(find.byKey(const Key('auth_submit_button')));
     await tester.pumpAndSettle();
 
@@ -51,6 +53,7 @@ void main() {
 
     expect(find.byKey(const Key('auth_name_field')), findsOneWidget);
 
+    await tester.ensureVisible(find.byKey(const Key('auth_toggle_mode_button')));
     await tester.tap(find.byKey(const Key('auth_toggle_mode_button')));
     await tester.pumpAndSettle();
 
