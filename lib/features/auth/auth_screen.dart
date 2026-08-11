@@ -4,16 +4,18 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_providers.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/dark_mockup_palette.dart';
 
-// This screen intentionally uses its own fixed dark/neon palette rather than
-// AppTheme's forest-green ColorScheme — it's a one-off match for a specific
-// login mockup, not a change to the app-wide design system.
-const _bg = Color(0xFF0D0D0D);
-const _fieldFill = Color(0xFF1C1C1C);
-const _brandGreen = Color(0xFF7ED321);
-const _mutedText = Color(0xFF9A9A9A);
-const _socialFill = Color(0xFF1C1C1C);
-const _facebookBlue = Color(0xFF1877F2);
+// This screen intentionally uses DarkMockupPalette's fixed dark/neon
+// palette rather than AppTheme's forest-green ColorScheme — it's a one-off
+// match for a specific login mockup, not a change to the app-wide design
+// system. See DarkMockupPalette's doc comment.
+const _bg = DarkMockupPalette.background;
+const _fieldFill = DarkMockupPalette.card;
+const _brandGreen = DarkMockupPalette.accent;
+const _mutedText = DarkMockupPalette.mutedText;
+const _socialFill = DarkMockupPalette.card;
+const _facebookBlue = DarkMockupPalette.facebookBlue;
 
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
