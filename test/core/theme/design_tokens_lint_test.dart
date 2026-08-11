@@ -7,15 +7,22 @@ import 'package:flutter_test/flutter_test.dart';
 /// spacing-token equivalent) across every screen, not just the theme layer.
 void main() {
   test('screens resolve color and spacing through design tokens, not raw literals', () {
-    // auth_screen.dart is excluded: it deliberately pins its own fixed
-    // dark/neon palette to match an exact external login mockup, rather
-    // than drawing from the app-wide ColorScheme (see the file's header
-    // comment).
+    // These screens are excluded: they deliberately pin DarkMockupPalette's
+    // fixed dark/neon colors to match specific external mockups, rather
+    // than drawing from the app-wide ColorScheme (see DarkMockupPalette's
+    // header comment).
+    const darkMockupScreens = {
+      'auth_screen.dart',
+      'onboarding_screen.dart',
+      'split_editor_screen.dart',
+      'split_day_detail_screen.dart',
+      'split_day_history_screen.dart',
+    };
     final targets = [
       ...Directory('lib/features')
           .listSync(recursive: true)
           .whereType<File>()
-          .where((f) => f.path.endsWith('.dart') && !f.path.endsWith('auth_screen.dart')),
+          .where((f) => f.path.endsWith('.dart') && !darkMockupScreens.any((name) => f.path.endsWith(name))),
       File('lib/core/connectivity/connectivity_banner.dart'),
     ];
 
