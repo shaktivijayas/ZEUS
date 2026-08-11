@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../firestore/user_repository.dart';
 
@@ -24,4 +25,14 @@ class AuthRepository {
   }
 
   Future<void> signOut() => _auth.signOut();
+
+  Future<void> sendPasswordReset(String email) => _auth.sendPasswordResetEmail(email: email);
+
+  // setPersistence is only implemented for the web platform by the
+  // firebase_auth plugin; on mobile the SDK always persists sessions
+  // locally, so this is a no-op there rather than an UnimplementedError.
+  Future<void> setKeepLoggedIn(bool keepLoggedIn) {
+    if (!kIsWeb) return Future.value();
+    return _auth.setPersistence(keepLoggedIn ? Persistence.LOCAL : Persistence.SESSION);
+  }
 }
