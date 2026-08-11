@@ -8,6 +8,8 @@ import 'package:zeus/models/split_day.dart';
 
 void main() {
   testWidgets('shows all 7 weekdays, unconfigured days show as rest days', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final firestore = FakeFirebaseFirestore();
     final repo = SplitRepository(firestore, 'uid-1');
 
@@ -20,6 +22,8 @@ void main() {
   });
 
   testWidgets('a configured weekday shows its label and exercise count instead of rest day', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final firestore = FakeFirebaseFirestore();
     final repo = SplitRepository(firestore, 'uid-1');
     await repo.saveSplitDay(const SplitDay(
