@@ -67,6 +67,7 @@ final appRouter = GoRouter(
           splitRepo: splitRepo,
           checkInRepo: checkInRepo,
           workoutLogRepo: workoutLogRepo,
+          foodLogRepo: FoodLogRepository(firestore, uid),
           checkInService: CheckInService(checkInRepo, userRepo),
           syncService: AppOpenSyncService(checkInRepo, userRepo),
         );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/checkin/checkin_service.dart';
 import '../../core/firestore/checkin_repository.dart';
+import '../../core/firestore/food_log_repository.dart';
 import '../../core/firestore/split_repository.dart';
 import '../../core/firestore/user_repository.dart';
 import '../../core/firestore/workout_log_repository.dart';
@@ -17,6 +18,7 @@ class HomeSyncGate extends StatefulWidget {
     required this.splitRepo,
     required this.checkInRepo,
     required this.workoutLogRepo,
+    required this.foodLogRepo,
     required this.checkInService,
     required this.syncService,
   });
@@ -25,6 +27,7 @@ class HomeSyncGate extends StatefulWidget {
   final SplitRepository splitRepo;
   final CheckInRepository checkInRepo;
   final WorkoutLogRepository workoutLogRepo;
+  final FoodLogRepository foodLogRepo;
   final CheckInService checkInService;
   final AppOpenSyncService syncService;
 
@@ -41,7 +44,7 @@ class _HomeSyncGateState extends State<HomeSyncGate> {
       future: _syncFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(body: Center(child: CircularProgressIndicator(key: Key('home_sync_loading_indicator'))));
         }
         // A sync failure (e.g. offline on first launch) is treated as
         // non-fatal — Home still mounts and works against cached/local
@@ -51,6 +54,7 @@ class _HomeSyncGateState extends State<HomeSyncGate> {
           splitRepo: widget.splitRepo,
           checkInRepo: widget.checkInRepo,
           workoutLogRepo: widget.workoutLogRepo,
+          foodLogRepo: widget.foodLogRepo,
           checkInService: widget.checkInService,
         );
       },
