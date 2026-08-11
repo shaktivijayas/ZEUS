@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -11,6 +9,7 @@ import '../../core/firestore/user_repository.dart';
 import '../../core/firestore/workout_log_repository.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/apple_fitness_palette.dart';
+import '../../core/widgets/apple_bottom_bar.dart';
 import '../../models/app_user.dart';
 import '../../models/check_in.dart';
 import '../../models/exercise_log.dart';
@@ -158,7 +157,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: ApplePalette.background,
-      bottomNavigationBar: _BottomBar(
+      bottomNavigationBar: AppleBottomBar(
+        active: AppleBottomTab.summary,
         onCalendar: () => context.push('/calendar'),
         onSplit: () => context.push('/split-editor'),
         onCalories: () => context.push('/calories'),
@@ -417,62 +417,3 @@ class _ActivityRing extends StatelessWidget {
   }
 }
 
-class _BottomBar extends StatelessWidget {
-  const _BottomBar({required this.onCalendar, required this.onSplit, required this.onCalories});
-
-  final VoidCallback onCalendar;
-  final VoidCallback onSplit;
-  final VoidCallback onCalories;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 60 + MediaQuery.of(context).padding.bottom,
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            color: ApplePalette.tabBarBackground.withValues(alpha: 0.75),
-            padding: EdgeInsets.only(top: AppSpacing.sm, bottom: MediaQuery.of(context).padding.bottom + AppSpacing.xs),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                const _BottomBarItem(icon: Icons.donut_large, label: 'Summary', active: true),
-                _BottomBarItem(icon: Icons.calendar_month, label: 'Calendar', onTap: onCalendar),
-                _BottomBarItem(icon: Icons.edit_calendar, label: 'Split', onTap: onSplit),
-                _BottomBarItem(icon: Icons.restaurant, label: 'Calories', onTap: onCalories, itemKey: const Key('home_calories_button')),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BottomBarItem extends StatelessWidget {
-  const _BottomBarItem({required this.icon, required this.label, this.active = false, this.onTap, this.itemKey});
-
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback? onTap;
-  final Key? itemKey;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active ? ApplePalette.green : ApplePalette.dateGray;
-    return InkWell(
-      key: itemKey,
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 2),
-          Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
-}
