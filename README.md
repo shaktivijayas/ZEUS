@@ -1,116 +1,99 @@
 <div align="center">
 
-# ⚡ ZEUS
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=180&section=header&text=ZEUS&fontSize=64&fontColor=fff&animation=twinkling&fontAlignY=38&desc=Calm%20training%20%26%20nutrition%20logbook%20%7C%20Flutter%20%2B%20Firebase&descSize=16&descColor=fff&descAlignY=60" />
 
-**A calm, personal record-keeper for training and eating.**
+<br/>
 
-Android-only Flutter app for a small private group who train and eat with intention — structured split-day workouts, a check-in streak with monthly "freezes", and calorie / macro logging. No coaching, no gamification, no hype. Just an honest daily log that stays out of your way.
+[![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)](https://dart.dev)
+[![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com)
+[![Riverpod](https://img.shields.io/badge/Riverpod-3B5BDB?style=for-the-badge&logo=flutter&logoColor=white)](https://riverpod.dev)
+[![Material 3](https://img.shields.io/badge/Material%203-757575?style=for-the-badge&logo=materialdesign&logoColor=white)](https://m3.material.io)
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.12%2B-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-3.12-0175C2?logo=dart&logoColor=white)](https://dart.dev)
-[![Firebase](https://img.shields.io/badge/Firebase-Auth%20%2B%20Firestore-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com)
-[![Riverpod](https://img.shields.io/badge/State-Riverpod-3B5BDB)](https://riverpod.dev)
-[![Tests](https://img.shields.io/badge/tests-134%20passing-3FB950)](#testing)
-[![Platform](https://img.shields.io/badge/platform-Android-3DDC84?logo=android&logoColor=white)](#)
+![License](https://img.shields.io/badge/License-Unlicensed-lightgrey?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Phases%201--2%20Shipped-brightgreen?style=flat-square)
+![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?style=flat-square)
+![Tests](https://img.shields.io/badge/Tests-134%20passing-00d4ff?style=flat-square)
 
 </div>
 
 ---
 
-## Table of contents
+## ⚡ What is ZEUS?
 
-- [What it is](#what-it-is)
-- [Screenshots](#screenshots)
-- [Feature tour](#feature-tour)
-- [Tech stack](#tech-stack)
-- [Architecture](#architecture)
-- [Data model](#data-model)
-- [How the hard parts work](#how-the-hard-parts-work)
-- [Project structure](#project-structure)
-- [Getting started](#getting-started)
-- [Testing](#testing)
-- [Design system](#design-system)
-- [Roadmap](#roadmap)
-- [License](#license)
+**ZEUS** is a gym + nutrition companion app for its creator plus a small group of friends and family who train and eat with intention. It's opened **mid-workout or right after a meal** — never for a "session" — so every screen is built around one narrow job: log a check-in, complete today's split, or log a meal, then get out of the way.
 
----
-
-## What it is
-
-ZEUS is a gym + nutrition companion app built for its creator plus a handful of friends and family. It is opened **in the middle of a workout or right after a meal** — never for a "session" — so every screen is built around one narrow job: log a check-in, complete today's split, or log a meal, then get out of the way.
-
-It is delivered as a **shareable APK** (`flutter build apk`), not through the Play Store, and is developed in four phases:
+It's an **Android-only Flutter app**, delivered as a shareable APK (`flutter build apk`) rather than through the Play Store, developed in four phases:
 
 | Phase | Scope | Status |
-|------:|-------|--------|
-| 1 | Foundation · auth · split/workout tracking · check-in streak with freezes | ✅ Shipped |
-| 2 | Calorie & macro tracking (TDEE goal, Open Food Facts search, manual entry) | ✅ Shipped |
-| 3 | Reminders (Firebase Cloud Messaging) | 🔜 Planned |
-| 4 | Social — friends, shared streaks, chat | 🔜 Planned |
+|:---|:---|:---|
+| **1** | Foundation · auth · split / workout tracking · check-in streak with freezes | ✅ Shipped |
+| **2** | Calorie & macro tracking — TDEE goal, Open Food Facts search, manual entry | ✅ Shipped |
+| **3** | Reminders (Firebase Cloud Messaging) | 🔜 Planned |
+| **4** | Social — friends, shared streaks, chat | 🔜 Planned |
+
+> A calm, honest logbook for training and eating — not a coach shouting at you, not a game keeping score.
 
 Phase 2 is deliberately **independent** of Phase 1: logging food never touches your streak, and the streak algorithm never looks at food.
 
 ---
 
-## Screenshots
+## 📸 Screenshots
 
 > Real captures from a debug build running on an Android 14 emulator (Pixel 7).
 
 | Sign up | Home / Summary |
-|---|---|
-| ![Auth screen](docs/screenshots/01-auth.png) | ![Home](docs/screenshots/03-home.png) |
+|:---:|:---:|
+| <img src="docs/screenshots/01-auth.png" width="280" /> | <img src="docs/screenshots/03-home.png" width="280" /> |
 
 ---
 
-## Feature tour
+## ✨ Features
 
 ### Training
 
-- **Weekly split editor** — one configurable workout per weekday (Mon–Sun). Each day has a label ("Chest & Shoulders") and an ordered list of exercise targets (`name`, `targetSets`, `targetReps`, `targetWeight`). Unconfigured days render as rest days.
-- **Check-in streak** — one tap on Home writes today's check-in and grants streak credit *immediately*, decoupled from whether you log any exercises afterward.
-- **Workout logging** — after checking in, the day's split appears as a checklist. A `workoutLogs` **draft** is created the moment you tick your first exercise; every later edit (sets, reps, weight, notes) autosaves to that draft, so backing out mid-session loses nothing. **Finish** flips the draft to `completed` and records untouched exercises as `skipped`.
-- **Streak freezes** — you get **2 freezes per month** (auto-reset). A missed day silently spends a freeze instead of breaking the streak; once freezes run out, the streak resets to 0. All computed on app open (see [gap-walk](#2-the-streak-gap-walk-freezes)).
-- **Rest days** — pre-mark a day as a rest day from the calendar; the gap-walk then skips it without spending a freeze.
-- **Split history** — per split day, an `fl_chart` line chart of total training **volume** (`sets × reps × weight`) across every completed session, newest-first log list below.
+- 📅 **Weekly split editor** — one configurable workout per weekday (Mon–Sun); each day has a label and an ordered list of exercise targets (sets, reps, weight). Unconfigured days render as rest days.
+- ✅ **One-tap check-in** — grants streak credit *immediately*, decoupled from whether you log any exercises afterward.
+- 📝 **Autosaving workout logs** — a `draft` is created the moment you tick your first exercise; every later edit autosaves, so backing out mid-session loses nothing. **Finish** flips the draft to `completed` and records untouched exercises as `skipped`.
+- ❄️ **Streak freezes** — 2 per month (auto-reset). A missed day silently spends a freeze instead of breaking the streak; once freezes run out, the streak resets to 0.
+- 🌙 **Rest days** — pre-mark a day from the calendar; the streak algorithm then skips it without spending a freeze.
+- 📈 **Split history** — per split day, an `fl_chart` line chart of total training **volume** (`sets × reps × weight`) across every completed session.
 
 ### Nutrition
 
-- **TDEE calorie goal** — a Mifflin–St Jeor calculator (weight, height, age, sex, activity level, goal direction) produces a daily `calorieGoal` and a 30 / 40 / 30 protein / carb / fat macro split. Inputs are saved and re-editable.
-- **Food logging** — per day, entries grouped into Breakfast / Lunch / Dinner / Snacks with per-meal subtotals and a running total against your goal ("1,450 / 2,200 kcal").
-- **Two entry paths, one save** —
-  - **Search**: debounced [Open Food Facts](https://world.openfoodfacts.org) query (no API key); pick a result, enter grams, per-100 g figures are scaled to entry totals.
-  - **Manual**: type the name and totals directly — no quantity step — for home-cooked food Open Food Facts doesn't have.
-- **Recently logged quick-add** — computed client-side from your own last 7 days of entries; no separate food-catalog collection.
-- **Snapshotted entries** — full nutrition is embedded in each entry at save time, so editing a food later never rewrites history.
+- 🔥 **TDEE calorie goal** — a Mifflin–St Jeor calculator (weight, height, age, sex, activity level, goal) produces a daily `calorieGoal` and a 30 / 40 / 30 protein / carb / fat macro split. Inputs are saved and re-editable.
+- 🍽️ **Daily food log** — entries grouped into Breakfast / Lunch / Dinner / Snacks with per-meal subtotals and a running total against your goal ("1,450 / 2,200 kcal").
+- 🔎 **Two entry paths, one save** — **Search** a debounced [Open Food Facts](https://world.openfoodfacts.org) query (no API key), pick a result, enter grams, and per-100 g figures are scaled to totals; or **Manual** — type the name and totals directly for home-cooked food.
+- ⚡ **Recently-logged quick-add** — computed client-side from your own last 7 days of entries; no separate food-catalog collection.
+- 📌 **Snapshotted entries** — full nutrition is embedded in each entry at save time, so editing a food later never rewrites history.
 
 ### Cross-cutting
 
-- **Offline-first** — Firestore's local cache means check-ins, workout logs and manual food entries all work at the gym with no signal; writes sync when connectivity returns. A banner shows offline state (`connectivity_plus`).
-- **Auth-gated navigation** — `go_router` redirects enforce `signed out → /auth`, `signed in but new → /onboarding`, `onboarded → /home`, reacting live to `FirebaseAuth` state changes.
+- 📴 **Offline-first** — Firestore's local cache means check-ins, workout logs and manual food entries all work at the gym with no signal; writes sync on reconnect. A banner shows offline state (`connectivity_plus`).
+- 🔐 **Auth-gated navigation** — `go_router` redirects enforce `signed out → /auth`, `new → /onboarding`, `onboarded → /home`, reacting live to `FirebaseAuth` state.
 
 ---
 
-## Tech stack
+## 🛠️ Tech Stack
 
-| Layer | Choice | Notes |
-|---|---|---|
-| Language / SDK | **Dart 3.12**, **Flutter 3.12+** | `environment: sdk: ^3.12.2` |
-| UI | **Material 3** (`useMaterial3: true`) | Light + dark `ColorScheme`, `ThemeMode.system` |
-| State management | **Riverpod** (`flutter_riverpod` ^3.4.2) | `ProviderScope` at root; screens also use constructor injection of repositories via the router |
-| Routing | **go_router** ^17.3.0 | Declarative routes + async redirect guard + `refreshListenable` on the auth stream |
-| Auth | **Firebase Auth** ^6.5 | Email / password |
-| Database | **Cloud Firestore** ^6.7 | Offline persistence, per-user document tree, security rules + composite indexes in repo |
-| Networking | **http** ^1.6 | Open Food Facts `/api/v2/search` |
-| Charts | **fl_chart** ^1.1 | Split-day volume progression |
-| Connectivity | **connectivity_plus** ^7.3 | Offline banner |
-| Fonts / icons | **google_fonts** (Inter), `cupertino_icons`, `font_awesome_flutter` | |
-| Formatting | **intl** ^0.20 | Dates / numbers |
-| Testing | `flutter_test`, **mocktail**, **fake_cloud_firestore**, **firebase_auth_mocks** | 134 tests |
-| Rules tests | Node + `@firebase/rules-unit-testing` (Jest) | `firestore-tests/` |
+| Layer | Technology |
+|:---|:---|
+| **Language / SDK** | Dart 3.12, Flutter 3.12+ |
+| **UI** | Material 3 (`useMaterial3: true`), light + dark `ColorScheme`, `ThemeMode.system` |
+| **State management** | Riverpod (`flutter_riverpod`) + constructor injection via the router |
+| **Routing** | go_router — declarative routes + async redirect guard + `refreshListenable` on the auth stream |
+| **Auth** | Firebase Auth (email / password) |
+| **Database** | Cloud Firestore — offline persistence, per-user document tree, security rules + composite indexes in repo |
+| **Networking** | `http` → Open Food Facts `/api/v2/search` |
+| **Charts** | `fl_chart` — split-day volume progression |
+| **Connectivity** | `connectivity_plus` — offline banner |
+| **Fonts / icons** | `google_fonts` (Inter), `cupertino_icons`, `font_awesome_flutter` |
+| **Testing** | `flutter_test`, `mocktail`, `fake_cloud_firestore`, `firebase_auth_mocks` — 134 tests |
+| **Rules tests** | Node + `@firebase/rules-unit-testing` (Jest) in `firestore-tests/` |
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 ZEUS is a **layered single-module Flutter app**. Widgets never touch Firestore directly — every read/write goes through a repository, and every non-trivial rule (streak math, TDEE math, nutrition scaling) is extracted into a **pure function** that is unit-tested without Firebase.
 
@@ -208,7 +191,7 @@ sequenceDiagram
 
 ---
 
-## Data model
+## 🗄️ Data Model
 
 All data lives under a single per-user document tree in Firestore. Date-keyed documents (`YYYY-MM-DD` as the **document ID**) are the idempotency mechanism — the same day can only ever have one check-in / food-log doc.
 
@@ -275,7 +258,7 @@ Security rules (`firestore.rules`): every document under `users/{uid}` is readab
 
 ---
 
-## How the hard parts work
+## 🧠 How the Hard Parts Work
 
 ### 1. Idempotent check-in
 
@@ -321,7 +304,7 @@ No network, no API — fully offline and unit-tested per branch.
 
 ---
 
-## Project structure
+## 📂 Project Structure
 
 ```
 lib/
@@ -351,15 +334,15 @@ DESIGN.md · PRODUCT.md            # design system + product brief
 
 ---
 
-## Getting started
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- **Flutter SDK ≥ 3.12** (Dart 3.12) — `flutter doctor` should be clean for the Android toolchain
-- **Android SDK** + an emulator or a physical device (`adb devices`)
+- **Flutter SDK ≥ 3.12** (Dart 3.12) — `flutter doctor` clean for the Android toolchain
+- **Android SDK** + an emulator or physical device (`adb devices`)
 - A **Firebase project** with **Email/Password** auth and **Cloud Firestore** enabled
 
-### 1 · Clone & install
+### Installation
 
 ```bash
 git clone https://github.com/shaktivijayas/ZEUS.git
@@ -367,25 +350,21 @@ cd ZEUS
 flutter pub get
 ```
 
-### 2 · Firebase configuration
+### Firebase configuration
 
 The repo already contains a working config for the original project
-(`android/app/google-services.json` and `lib/core/firebase/firebase_options.dart`).
+(`android/app/google-services.json`, `lib/core/firebase/firebase_options.dart`).
 To point a fork at **your own** Firebase project:
 
 ```bash
 dart pub global activate flutterfire_cli
 flutterfire configure          # regenerates firebase_options.dart + google-services.json
-```
 
-Then deploy the rules and indexes:
-
-```bash
 npm install -g firebase-tools
 firebase deploy --only firestore:rules,firestore:indexes
 ```
 
-### 3 · Run
+### Run
 
 ```bash
 flutter run                              # debug, on the connected device/emulator
@@ -396,7 +375,7 @@ On first launch: **Sign up** → create your **first split day** (this flips `on
 
 ---
 
-## Testing
+## 🧪 Testing
 
 ```bash
 flutter test                             # 134 unit + widget tests
@@ -407,25 +386,25 @@ npm install
 firebase emulators:exec --only firestore "npm test"
 ```
 
-Test strategy:
-
-- **Pure functions** (`runGapWalk`, `calculateTdeeGoal`, nutrition scaling) — exhaustive branch coverage, no Firebase.
-- **Repositories** — run against `fake_cloud_firestore`.
-- **Auth** — `firebase_auth_mocks`.
-- **Widgets** — every screen has a test asserting its core behaviour (meal grouping & subtotals, validation errors are *visible* not silent, chips resolve colours from `ColorScheme`, rest-day rendering, etc.).
-- **Rules** — `@firebase/rules-unit-testing` verifies cross-user reads/writes are denied.
+| Layer | Approach |
+|:---|:---|
+| **Pure functions** (`runGapWalk`, `calculateTdeeGoal`, nutrition scaling) | exhaustive branch coverage, no Firebase |
+| **Repositories** | run against `fake_cloud_firestore` |
+| **Auth** | `firebase_auth_mocks` |
+| **Widgets** | every screen has a test for its core behaviour (meal grouping & subtotals, *visible* validation errors, chip colours from `ColorScheme`, rest-day rendering…) |
+| **Rules** | `@firebase/rules-unit-testing` verifies cross-user reads/writes are denied |
 
 ---
 
-## Design system
+## 🎨 Design System
 
-`DESIGN.md` defines **"The Lab Notebook"**: one forest-green accent used on ≤10 % of any screen, flat tonal surfaces (no resting shadows), a single typeface (Roboto) carrying hierarchy through weight/size alone, tabular figures for numbers, and a deliberately re-toned **dark `ColorScheme`** (not an alpha-invert). Accessibility baseline is WCAG AA contrast + respect for the system font-scale.
+`DESIGN.md` defines **"The Lab Notebook"**: one forest-green accent used on ≤10 % of any screen, flat tonal surfaces (no resting shadows), a single typeface (Roboto) carrying hierarchy through weight/size alone, tabular figures for numbers, and a deliberately re-toned **dark `ColorScheme`**. Accessibility baseline is WCAG AA contrast + respect for the system font-scale.
 
 > **Note on visual drift:** the shipped app currently mixes two looks. The original Material-3 "Lab Notebook" light system still governs Calendar, Calorie Log, Add Food, Calorie Goal and Profile, while Auth, Onboarding, Home, Split Editor and Split History were later restyled against dark "Apple Fitness" mockups with their own fixed palettes (`ApplePalette`, `DarkMockupPalette`) and the Inter typeface. `PRODUCT.md` documents this split as known technical debt.
 
 ---
 
-## Roadmap
+## 🗺️ Roadmap
 
 - **Phase 3 — Reminders**: Firebase Cloud Messaging nudges for check-ins and meals.
 - **Phase 4 — Social**: friends, shared streaks, lightweight chat.
@@ -435,6 +414,16 @@ Test strategy:
 
 ---
 
-## License
+## 📄 License
 
-No license file is currently included in this repository — all rights reserved by the author. Add a `LICENSE` file to make reuse terms explicit.
+No `LICENSE` file is currently included in this repository — all rights reserved by the author. Add one to make reuse terms explicit.
+
+---
+
+<div align="center">
+
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=100&section=footer" />
+
+⚡ *Built with Flutter + Firebase* ⚡
+
+</div>
