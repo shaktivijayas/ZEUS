@@ -1,6 +1,15 @@
 <div align="center">
 
-<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=180&section=header&text=ZEUS&fontSize=64&fontColor=fff&animation=twinkling&fontAlignY=38&desc=Calm%20training%20%26%20nutrition%20logbook%20%7C%20Flutter%20%2B%20Firebase&descSize=16&descColor=fff&descAlignY=60" />
+<pre>
+_________________________ ___  _________
+\____    /\_   _____/    |   \/   _____/
+  /     /  |    __)_|    |   /\_____  \
+ /     /_  |        \    |  / /        \
+/_______ \/_______  /______/ /_______  /
+        \/        \/                 \/
+</pre>
+
+**calm training & nutrition logbook · flutter + firebase · android**
 
 <br/>
 
@@ -422,8 +431,6 @@ No `LICENSE` file is currently included in this repository — all rights reserv
 
 <div align="center">
 
-<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=100&section=footer" />
-
-⚡ *Built with Flutter + Firebase* ⚡
+`⚡ built with flutter + firebase`
 
 </div>
