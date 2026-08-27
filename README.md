@@ -54,25 +54,11 @@ Phase 2 is deliberately **independent** of Phase 1: logging food never touches y
 
 ## Screenshots
 
-> Captured from a debug build running on an Android 14 emulator (Pixel 7). They also show the current **visual split**: Auth / Onboarding / Home / Split screens use a dark "Apple Fitness" look, while Calendar / Calorie Log / Add Food / Calorie Goal / Profile still use the original forest-green Material system (see [Design system](#design-system)).
+> Real captures from a debug build running on an Android 14 emulator (Pixel 7).
 
-| Sign up | Onboarding — first split day | Home / Summary |
-|---|---|---|
-| ![Auth screen](docs/screenshots/01-auth.png) | ![Onboarding](docs/screenshots/02-onboarding.png) | ![Home](docs/screenshots/03-home.png) |
-
-| Split editor (weekly) | Split day detail | Calendar (check-in states) |
-|---|---|---|
-| ![Split editor](docs/screenshots/04-split-editor.png) | ![Split day detail](docs/screenshots/05-split-day-detail.png) | ![Calendar](docs/screenshots/10-calendar.png) |
-
-| Calorie log | Add food — manual | Add food — Open Food Facts search |
-|---|---|---|
-| ![Calorie log](docs/screenshots/07-calorie-log.png) | ![Add food](docs/screenshots/08-add-food.png) | ![Add food search](docs/screenshots/08b-add-food-search.png) |
-
-| Calorie goal (TDEE calculator) | Profile |
+| Sign up | Home / Summary |
 |---|---|
-| ![Calorie goal](docs/screenshots/09-calorie-goal.png) | ![Profile](docs/screenshots/11-profile.png) |
-
-<sub>The Calendar legend: ✓ checked in · ❄ freeze used · ☾ rest day · ✕ missed. Per-split-day **volume history** (an `fl_chart` line chart) appears on the Split History screen once that day has completed sessions.</sub>
+| ![Auth screen](docs/screenshots/01-auth.png) | ![Home](docs/screenshots/03-home.png) |
 
 ---
 
