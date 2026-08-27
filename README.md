@@ -1,15 +1,15 @@
 <div align="center">
 
-```
+<pre>
 _________________________ ___  _________
 \____    /\_   _____/    |   \/   _____/
   /     /  |    __)_|    |   /\_____  \
  /     /_  |        \    |  / /        \
 /_______ \/_______  /______/ /_______  /
         \/        \/                 \/
+</pre>
 
-   calm training & nutrition logbook  ·  flutter + firebase  ·  android
-```
+**calm training & nutrition logbook · flutter + firebase · android**
 
 <br/>
 
