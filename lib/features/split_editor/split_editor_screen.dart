@@ -43,24 +43,35 @@ class SplitEditorScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: ApplePalette.background,
         elevation: 0,
+        // iOS nav bars always center the title, with the back affordance
+        // sitting separately on the left — Material's default left-aligned
+        // title next to leading is what made this read as Android, not Apple.
+        centerTitle: true,
         // Cupertino's plain chevron (not Material's arrow_back) with an
         // explicit accent color — like the title below, the app-wide
         // AppBarTheme would otherwise hand this a near-invisible color and
         // a heavier Material arrow shape.
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.back, color: ApplePalette.green, size: 28),
-          onPressed: () => Navigator.of(context).maybePop(),
+          icon: const Icon(CupertinoIcons.back, color: ApplePalette.exerciseGreen, size: 28),
+          // go(), not maybePop() — Split is a tab-bar destination now
+          // reached via `go`, which clears the stack, so there's nothing
+          // left to pop back to; Home is the universal "root" tab.
+          onPressed: () => context.go('/home'),
         ),
         // Explicit color (not just `foregroundColor`) because the app-wide
         // AppBarTheme.titleTextStyle (Roboto, light-theme ink) otherwise
         // wins the merge and renders near-invisible on this black AppBar.
-        title: Text('Split Editor', style: _appleFont(fontSize: 22, fontWeight: FontWeight.bold, color: ApplePalette.primaryText)),
+        title: Text(
+          'Split',
+          style: _appleFont(fontSize: 34, fontWeight: FontWeight.bold, color: ApplePalette.primaryText, letterSpacing: -0.4),
+        ),
       ),
       bottomNavigationBar: AppleBottomBar(
         active: AppleBottomTab.split,
-        onSummary: () => Navigator.of(context).maybePop(),
-        onCalendar: () => context.push('/calendar'),
-        onCalories: () => context.push('/calories'),
+        // `go`, not `push` — see the identical comment in calendar_screen.dart.
+        onSummary: () => context.go('/home'),
+        onCalendar: () => context.go('/calendar'),
+        onCalories: () => context.go('/calories'),
       ),
       body: StreamBuilder<List<SplitDay>>(
         stream: splitRepo.watchSplitDays(),
@@ -71,13 +82,13 @@ class SplitEditorScreen extends StatelessWidget {
             children: [
               for (final (id, name) in _weekdays)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
                   child: Material(
                     color: ApplePalette.card,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     child: InkWell(
                       key: Key('weekday_row_$id'),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                       onTap: () => context.push('/split-editor/$id', extra: name),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md + 5),
@@ -87,21 +98,24 @@ class SplitEditorScreen extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(name, style: _appleFont(fontSize: 17, fontWeight: FontWeight.bold, color: ApplePalette.primaryText)),
+                                  Text(
+                                    name,
+                                    style: _appleFont(fontSize: 17, fontWeight: FontWeight.bold, color: ApplePalette.primaryText, letterSpacing: -0.4),
+                                  ),
                                   const SizedBox(height: 2),
                                   byId[id] == null
                                       ? Text(
                                           'Rest day — tap to configure',
-                                          style: _appleFont(fontSize: 15, fontWeight: FontWeight.w300, color: ApplePalette.secondaryText),
+                                          style: _appleFont(fontSize: 15, fontWeight: FontWeight.w400, color: ApplePalette.dateGray),
                                         )
                                       : Text.rich(
                                           TextSpan(
-                                            style: _appleFont(fontSize: 15, fontWeight: FontWeight.w300, color: ApplePalette.secondaryText),
+                                            style: _appleFont(fontSize: 15, fontWeight: FontWeight.w400, color: ApplePalette.dateGray),
                                             children: [
                                               TextSpan(text: '${_sentenceCase(byId[id]!.label)} · '),
                                               TextSpan(
                                                 text: '${byId[id]!.exercises.length} exercises',
-                                                style: const TextStyle(color: ApplePalette.systemRed, fontWeight: FontWeight.w600),
+                                                style: const TextStyle(color: ApplePalette.moveRed, fontWeight: FontWeight.w700),
                                               ),
                                             ],
                                           ),

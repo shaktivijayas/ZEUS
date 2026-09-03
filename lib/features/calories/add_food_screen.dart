@@ -1,12 +1,24 @@
 import 'dart:async';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/firestore/food_log_repository.dart';
 import '../../core/nutrition/food_search_repository.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/apple_fitness_palette.dart';
 import '../../models/food_entry.dart';
 import '../../models/food_log.dart';
 
 enum _AddFoodMode { manual, search }
+
+/// Apple's real SF Pro can't be licensed/bundled for Android, so Inter — the
+/// closest freely-licensed geometric sans and the community's standard
+/// SF Pro stand-in on non-Apple platforms — is used for this screen's
+/// Apple-styled headings and labels instead of the app-wide Roboto type
+/// scale (AppTypography).
+TextStyle _appleFont({required double fontSize, required FontWeight fontWeight, required Color color, double? letterSpacing}) {
+  return GoogleFonts.inter(fontSize: fontSize, fontWeight: fontWeight, color: color, letterSpacing: letterSpacing);
+}
 
 class AddFoodScreen extends StatefulWidget {
   const AddFoodScreen({
@@ -182,74 +194,351 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Food')),
+      backgroundColor: ApplePalette.background,
+      appBar: AppBar(
+        backgroundColor: ApplePalette.background,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.back, color: ApplePalette.exerciseGreen, size: 28),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        title: Text(
+          'Add Food',
+          style: _appleFont(fontSize: 20, fontWeight: FontWeight.bold, color: ApplePalette.primaryText, letterSpacing: -0.4),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: ListView(
           children: [
-            Row(
-              children: [
-                TextButton(
-                  key: const Key('add_food_mode_manual'),
-                  onPressed: () => setState(() => _mode = _AddFoodMode.manual),
-                  child: const Text('Manual'),
-                ),
-                TextButton(
-                  key: const Key('add_food_mode_search'),
-                  onPressed: () => setState(() => _mode = _AddFoodMode.search),
-                  child: const Text('Search'),
-                ),
-              ],
-            ),
+            _ModeSegmentedControl(mode: _mode, onChanged: (m) => setState(() => _mode = m)),
             if (_recentEntries.isNotEmpty) ...[
-              const Text('Recently logged', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: AppSpacing.lg),
+              Text('Recently logged', style: _appleFont(fontSize: 15, fontWeight: FontWeight.w600, color: ApplePalette.primaryText)),
+              const SizedBox(height: AppSpacing.sm),
               Wrap(
                 spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
                 children: [
                   for (final entry in _recentEntries)
-                    ActionChip(
+                    GestureDetector(
                       key: Key('recent_entry_${entry.name}'),
-                      label: Text(entry.name),
-                      onPressed: () => _fillManualFrom(entry),
+                      onTap: () => _fillManualFrom(entry),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                        decoration: BoxDecoration(color: ApplePalette.divider, borderRadius: BorderRadius.circular(20)),
+                        child: Text(entry.name, style: _appleFont(fontSize: 14, fontWeight: FontWeight.w500, color: ApplePalette.primaryText)),
+                      ),
                     ),
                 ],
               ),
             ],
-            const SizedBox(height: AppSpacing.md),
-            if (_saveError != null) Text(_saveError!, key: const Key('save_error_text'), style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            const SizedBox(height: AppSpacing.lg),
+            if (_saveError != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: Text(
+                  _saveError!,
+                  key: const Key('save_error_text'),
+                  style: _appleFont(fontSize: 14, fontWeight: FontWeight.w500, color: ApplePalette.moveRed),
+                ),
+              ),
             if (_mode == _AddFoodMode.manual) ...[
-              TextField(key: const Key('manual_name_field'), controller: _nameController, decoration: const InputDecoration(labelText: 'Food name')),
-              TextField(key: const Key('manual_calories_field'), controller: _caloriesController, decoration: const InputDecoration(labelText: 'Calories'), keyboardType: TextInputType.number),
-              TextField(key: const Key('manual_protein_field'), controller: _proteinController, decoration: const InputDecoration(labelText: 'Protein (g)'), keyboardType: TextInputType.number),
-              TextField(key: const Key('manual_carbs_field'), controller: _carbsController, decoration: const InputDecoration(labelText: 'Carbs (g)'), keyboardType: TextInputType.number),
-              TextField(key: const Key('manual_fat_field'), controller: _fatController, decoration: const InputDecoration(labelText: 'Fat (g)'), keyboardType: TextInputType.number),
-              ElevatedButton(key: const Key('manual_save_button'), onPressed: _saving ? null : _saveManual, child: const Text('Save')),
+              _FormCard(children: [
+                _FormRow(label: 'Food name', child: TextField(
+                  key: const Key('manual_name_field'),
+                  controller: _nameController,
+                  textAlign: TextAlign.right,
+                  style: _appleFont(fontSize: 15, fontWeight: FontWeight.w400, color: ApplePalette.primaryText),
+                  decoration: _rowInputDecoration(),
+                )),
+                _FormRow(label: 'Calories', child: TextField(
+                  key: const Key('manual_calories_field'),
+                  controller: _caloriesController,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.right,
+                  style: _appleFont(fontSize: 15, fontWeight: FontWeight.w400, color: ApplePalette.primaryText),
+                  decoration: _rowInputDecoration(),
+                )),
+                _FormRow(label: 'Protein (g)', child: TextField(
+                  key: const Key('manual_protein_field'),
+                  controller: _proteinController,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.right,
+                  style: _appleFont(fontSize: 15, fontWeight: FontWeight.w400, color: ApplePalette.primaryText),
+                  decoration: _rowInputDecoration(),
+                )),
+                _FormRow(label: 'Carbs (g)', child: TextField(
+                  key: const Key('manual_carbs_field'),
+                  controller: _carbsController,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.right,
+                  style: _appleFont(fontSize: 15, fontWeight: FontWeight.w400, color: ApplePalette.primaryText),
+                  decoration: _rowInputDecoration(),
+                )),
+                _FormRow(label: 'Fat (g)', isLast: true, child: TextField(
+                  key: const Key('manual_fat_field'),
+                  controller: _fatController,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.right,
+                  style: _appleFont(fontSize: 15, fontWeight: FontWeight.w400, color: ApplePalette.primaryText),
+                  decoration: _rowInputDecoration(),
+                )),
+              ]),
+              const SizedBox(height: AppSpacing.lg),
+              _PillButton(
+                buttonKey: const Key('manual_save_button'),
+                label: 'Save',
+                onPressed: _saving ? null : _saveManual,
+              ),
             ] else ...[
-              TextField(key: const Key('search_query_field'), controller: _searchController, decoration: const InputDecoration(labelText: 'Search food')),
-              ElevatedButton(key: const Key('search_run_button'), onPressed: _runSearch, child: const Text('Search')),
+              _FormCard(children: [
+                _FormRow(label: 'Search', isLast: true, child: TextField(
+                  key: const Key('search_query_field'),
+                  controller: _searchController,
+                  textAlign: TextAlign.right,
+                  style: _appleFont(fontSize: 15, fontWeight: FontWeight.w400, color: ApplePalette.primaryText),
+                  decoration: _rowInputDecoration(hintText: 'Food name'),
+                )),
+              ]),
+              const SizedBox(height: AppSpacing.md),
+              _PillButton(buttonKey: const Key('search_run_button'), label: 'Search', onPressed: _runSearch),
               if (_searchError != null) ...[
-                Text(_searchError!, key: const Key('search_error_text'), style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                TextButton(
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.md),
+                  child: Text(
+                    _searchError!,
+                    key: const Key('search_error_text'),
+                    style: _appleFont(fontSize: 14, fontWeight: FontWeight.w500, color: ApplePalette.moveRed),
+                  ),
+                ),
+                GestureDetector(
                   key: const Key('search_switch_to_manual'),
-                  onPressed: () => setState(() => _mode = _AddFoodMode.manual),
-                  child: const Text('Switch to manual entry'),
+                  onTap: () => setState(() => _mode = _AddFoodMode.manual),
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.sm),
+                    child: Text(
+                      'Switch to manual entry',
+                      style: _appleFont(fontSize: 15, fontWeight: FontWeight.w600, color: ApplePalette.exerciseGreen),
+                    ),
+                  ),
                 ),
               ],
-              for (final result in _searchResults)
-                ListTile(
-                  key: Key('search_result_${result.name}'),
-                  title: Text(result.name),
-                  subtitle: Text('${result.caloriesPer100g.round()} kcal / 100g'),
-                  selected: _selectedResult == result,
-                  onTap: () => setState(() => _selectedResult = result),
-                ),
+              if (_searchResults.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.lg),
+                _FormCard(children: [
+                  for (var i = 0; i < _searchResults.length; i++)
+                    _SearchResultRow(
+                      key: Key('search_result_${_searchResults[i].name}'),
+                      result: _searchResults[i],
+                      selected: _selectedResult == _searchResults[i],
+                      isLast: i == _searchResults.length - 1,
+                      onTap: () => setState(() => _selectedResult = _searchResults[i]),
+                    ),
+                ]),
+              ],
               if (_selectedResult != null) ...[
-                TextField(key: const Key('search_quantity_field'), controller: _quantityController, decoration: const InputDecoration(labelText: 'Quantity (g)'), keyboardType: TextInputType.number),
-                ElevatedButton(key: const Key('search_save_button'), onPressed: _saving ? null : _saveFromSearch, child: const Text('Save')),
+                const SizedBox(height: AppSpacing.lg),
+                _FormCard(children: [
+                  _FormRow(label: 'Quantity (g)', isLast: true, child: TextField(
+                    key: const Key('search_quantity_field'),
+                    controller: _quantityController,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.right,
+                    style: _appleFont(fontSize: 15, fontWeight: FontWeight.w400, color: ApplePalette.primaryText),
+                    decoration: _rowInputDecoration(),
+                  )),
+                ]),
+                const SizedBox(height: AppSpacing.lg),
+                _PillButton(
+                  buttonKey: const Key('search_save_button'),
+                  label: 'Save',
+                  onPressed: _saving ? null : _saveFromSearch,
+                ),
               ],
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+// The app-wide InputDecorationTheme (see AppTheme) sets enabledBorder/
+// focusedBorder/errorBorder directly, which each win over a bare `border:`
+// override on a per-field InputDecoration — every border variant has to be
+// nulled out explicitly, or the legacy light-theme outline still shows up
+// on this black form.
+InputDecoration _rowInputDecoration({String? hintText}) {
+  return InputDecoration(
+    hintText: hintText,
+    hintStyle: _appleFont(fontSize: 15, fontWeight: FontWeight.w400, color: ApplePalette.dateGray),
+    border: InputBorder.none,
+    enabledBorder: InputBorder.none,
+    focusedBorder: InputBorder.none,
+    errorBorder: InputBorder.none,
+    focusedErrorBorder: InputBorder.none,
+    disabledBorder: InputBorder.none,
+    isDense: true,
+    contentPadding: EdgeInsets.zero,
+  );
+}
+
+/// The unified iOS-style grouped-list container — a single rounded card
+/// holding a column of label/value rows, hairline-divided between them.
+class _FormCard extends StatelessWidget {
+  const _FormCard({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(color: ApplePalette.card, borderRadius: BorderRadius.circular(14)),
+      child: Column(children: children),
+    );
+  }
+}
+
+class _FormRow extends StatelessWidget {
+  const _FormRow({required this.label, required this.child, this.isLast = false});
+
+  final String label;
+  final Widget child;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+          child: Row(
+            children: [
+              Text(label, style: _appleFont(fontSize: 15, fontWeight: FontWeight.w400, color: ApplePalette.primaryText)),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(child: child),
+            ],
+          ),
+        ),
+        if (!isLast) Padding(padding: const EdgeInsets.only(left: AppSpacing.md), child: Container(height: 1, color: ApplePalette.divider.withValues(alpha: 0.6))),
+      ],
+    );
+  }
+}
+
+class _SearchResultRow extends StatelessWidget {
+  const _SearchResultRow({super.key, required this.result, required this.selected, required this.isLast, required this.onTap});
+
+  final FoodSearchResult result;
+  final bool selected;
+  final bool isLast;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            color: selected ? ApplePalette.exerciseGreen.withValues(alpha: 0.12) : Colors.transparent,
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(result.name, style: _appleFont(fontSize: 15, fontWeight: FontWeight.w500, color: ApplePalette.primaryText)),
+                      const SizedBox(height: 2),
+                      Text('${result.caloriesPer100g.round()} kcal / 100g', style: _appleFont(fontSize: 13, fontWeight: FontWeight.w400, color: ApplePalette.dateGray)),
+                    ],
+                  ),
+                ),
+                if (selected) const Icon(CupertinoIcons.checkmark_circle_fill, color: ApplePalette.exerciseGreen, size: 20),
+              ],
+            ),
+          ),
+        ),
+        if (!isLast) Padding(padding: const EdgeInsets.only(left: AppSpacing.md), child: Container(height: 1, color: ApplePalette.divider.withValues(alpha: 0.6))),
+      ],
+    );
+  }
+}
+
+/// Native iOS segmented control: a rounded pill track with a smooth,
+/// floating capsule behind whichever segment is active.
+class _ModeSegmentedControl extends StatelessWidget {
+  const _ModeSegmentedControl({required this.mode, required this.onChanged});
+
+  final _AddFoodMode mode;
+  final ValueChanged<_AddFoodMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 36,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(color: ApplePalette.card, borderRadius: BorderRadius.circular(18)),
+      child: Row(
+        children: [
+          Expanded(child: _segment(context, 'Manual', _AddFoodMode.manual, const Key('add_food_mode_manual'))),
+          Expanded(child: _segment(context, 'Search', _AddFoodMode.search, const Key('add_food_mode_search'))),
+        ],
+      ),
+    );
+  }
+
+  Widget _segment(BuildContext context, String label, _AddFoodMode value, Key key) {
+    final active = mode == value;
+    return GestureDetector(
+      key: key,
+      onTap: () => onChanged(value),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: active ? const Color(0xFFEBEBF0) : Colors.transparent,
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Text(
+          label,
+          style: _appleFont(fontSize: 14, fontWeight: FontWeight.w600, color: active ? Colors.black : ApplePalette.dateGray),
+        ),
+      ),
+    );
+  }
+}
+
+/// The premium iOS-style pill action button — fully rounded, comfortable
+/// vertical padding, floating with clean side margins.
+class _PillButton extends StatelessWidget {
+  const _PillButton({required this.buttonKey, required this.label, required this.onPressed});
+
+  final Key buttonKey;
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        key: buttonKey,
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: ApplePalette.exerciseGreen,
+          disabledBackgroundColor: ApplePalette.exerciseGreen.withValues(alpha: 0.4),
+          foregroundColor: Colors.black,
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+          elevation: 0,
+        ),
+        child: Text(label, style: _appleFont(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black)),
       ),
     );
   }

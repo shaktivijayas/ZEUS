@@ -6,7 +6,7 @@ product
 
 ## Platform
 
-android
+android — with an intentional exception: the visual skin is Apple Fitness/iOS HIG, not Material 3. Screens use Cupertino-shaped icons and controls, a system-gray/dark palette, and an SF-Pro-style type stand-in (Inter, since real SF Pro can't be bundled for Android) by deliberate choice, not by native-slop accident. Android's *system* guarantees still apply regardless of visual skin — predictive Back gesture, edge-to-edge window insets, 48×48dp touch targets — see DESIGN.md §7.
 
 ## Users
 
@@ -22,13 +22,14 @@ ZEUS is a calm, personal record-keeper for training and eating — not a coach s
 
 ## Brand Personality
 
-Calm and focused, like a well-organized notebook. Quiet typography, muted neutrals, minimal but deliberate color, generous whitespace. Closest reference: Apple Health / Fitness — restrained data presentation, no hype, numbers presented plainly and trusted to speak for themselves.
+Calm and focused, like a well-organized notebook — now expressed literally as Apple Fitness's own dark visual language, not just "inspired by" it: pitch-black screens, `#1C1C1E` card surfaces, the three real Fitness ring colors (Exercise Green `#30D158`, Move Red `#FA114F`, Stand Cyan `#00D4FF`) held in reserve for accents, and restrained data presentation — no hype, numbers stated plainly and trusted to speak for themselves.
 
 ## Anti-references
 
-Two things to avoid, explicitly:
-- **Loud fitness-app cliché**: neon gradients, aggressive red/orange "burn calories" urgency, gamified badges and streak-shaming, hero-metric dashboards screaming a big number at you.
-- **Generic default Material**: the app's current state — stock Material 3 widgets riding a single theme seed color with no real layout, typography, or component design applied.
+Three things to avoid, explicitly:
+- **Cheap neon fitness-app cliché**: this is *not* license for gradients, oversaturated non-system colors, gamified badges, or streak-shaming — the target is Apple's exact restrained system palette (§ DESIGN.md Colors), not a louder one. If a color used doesn't trace back to a named Apple Fitness system value, it's off-brand.
+- **Generic default Material left unconverted**: any screen still riding a single Material 3 seed color with no layout/typography/component work applied is in the old failure state, whether or not the app has moved on elsewhere.
+- **A split brand**: some screens carrying the dark Apple Fitness system, others still on the light Material "Lab Notebook" system, is now the patchwork risk to watch for (see Design Principles below) — screens should be migrated deliberately, not left half-converted.
 
 ## Design Principles
 
@@ -37,6 +38,8 @@ Quiet by default — data and structure lead; decoration never competes with the
 One clear focus per screen — no competing calls to action fighting for attention.
 
 Progress shown honestly, not hyped — streaks and calories are information to reflect on, not a game score to chase.
+
+No fabricated data behind a real-looking metric — when a visual design calls for a category or a ring ZEUS doesn't actually track (e.g. Apple Fitness's Stand ring, or Mindfulness/Walking session types), map it to the closest real signal ZEUS has, or drop it, rather than rendering something that looks like a tracked stat but isn't backed by anything (see the Calendar screen's Rings/Sessions mapping in DESIGN.md).
 
 One coherent notebook, not a patchwork — every screen, old and new, should read as the same calm system, not eight different default-Material screens bolted together.
 

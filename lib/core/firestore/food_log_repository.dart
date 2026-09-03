@@ -31,6 +31,17 @@ class FoodLogRepository {
     await _collection.doc(log.date).set(log.toMap());
   }
 
+  /// Docs from [startDateInclusive] through [endDateInclusive] (both
+  /// "YYYY-MM-DD"), live-updating — powers the calendar's Move ring, which
+  /// needs each day's calorie total against the user's goal.
+  Stream<List<FoodLog>> watchLogsForRange(String startDateInclusive, String endDateInclusive) {
+    return _collection
+        .where(FieldPath.documentId, isGreaterThanOrEqualTo: startDateInclusive)
+        .where(FieldPath.documentId, isLessThanOrEqualTo: endDateInclusive)
+        .snapshots()
+        .map((snap) => snap.docs.map((doc) => FoodLog.fromMap(doc.id, doc.data())).toList());
+  }
+
   /// The user's own most recently logged entries across the last
   /// [lookbackDays] days (today inclusive), newest first, deduplicated by
   /// name, capped at [limit]. Powers the Add Food screen's "recently

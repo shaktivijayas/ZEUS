@@ -65,4 +65,28 @@ void main() {
     final fetched = await repo.getForDate('2026-08-02');
     expect(fetched, isNull);
   });
+
+  test('watchCompletedLogsForRange includes only completed logs within the date range', () async {
+    final inRangeCompletedId = await repo.createDraft(const WorkoutLog(
+      id: '', date: '2026-08-10', splitDayId: 'monday', status: WorkoutLogStatus.draft, exercises: [], completedAt: null,
+    ));
+    await repo.completeLog(inRangeCompletedId, const []);
+
+    // Draft (never completed) — must be excluded even though its date is in range.
+    await repo.createDraft(const WorkoutLog(
+      id: '', date: '2026-08-12', splitDayId: 'tuesday', status: WorkoutLogStatus.draft, exercises: [], completedAt: null,
+    ));
+
+    // Completed but outside the queried range — must be excluded.
+    final outOfRangeId = await repo.createDraft(const WorkoutLog(
+      id: '', date: '2026-09-05', splitDayId: 'monday', status: WorkoutLogStatus.draft, exercises: [], completedAt: null,
+    ));
+    await repo.completeLog(outOfRangeId, const []);
+
+    final results = await repo.watchCompletedLogsForRange('2026-08-01', '2026-08-31').first;
+
+    expect(results, hasLength(1));
+    expect(results.single.date, '2026-08-10');
+    expect(results.single.status, WorkoutLogStatus.completed);
+  });
 }

@@ -2,18 +2,31 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zeus/core/firestore/checkin_repository.dart';
+import 'package:zeus/core/firestore/food_log_repository.dart';
+import 'package:zeus/core/firestore/user_repository.dart';
+import 'package:zeus/core/firestore/workout_log_repository.dart';
 import 'package:zeus/features/calendar/calendar_screen.dart';
 import 'package:zeus/models/check_in.dart';
+
+Future<void> _pumpCalendar(WidgetTester tester, {required CheckInRepository checkInRepo, required FakeFirebaseFirestore firestore}) async {
+  await tester.pumpWidget(MaterialApp(
+    home: CalendarScreen(
+      checkInRepo: checkInRepo,
+      workoutLogRepo: WorkoutLogRepository(firestore, 'uid-1'),
+      foodLogRepo: FoodLogRepository(firestore, 'uid-1'),
+      userRepo: UserRepository(firestore, 'uid-1'),
+      initialMonth: DateTime.utc(2026, 8, 1),
+    ),
+  ));
+  await tester.pumpAndSettle();
+}
 
 void main() {
   testWidgets('tapping a future day marks it as a rest day', (tester) async {
     final firestore = FakeFirebaseFirestore();
     final repo = CheckInRepository(firestore, 'uid-1');
 
-    await tester.pumpWidget(MaterialApp(
-      home: CalendarScreen(checkInRepo: repo, initialMonth: DateTime.utc(2026, 8, 1)),
-    ));
-    await tester.pumpAndSettle();
+    await _pumpCalendar(tester, checkInRepo: repo, firestore: firestore);
 
     await tester.tap(find.byKey(const Key('calendar_day_2026-08-15')));
     await tester.pumpAndSettle();
@@ -27,10 +40,7 @@ void main() {
     final repo = CheckInRepository(firestore, 'uid-1');
     await repo.writeCheckIn(CheckIn(date: '2026-08-15', type: CheckInType.checkedIn, timestamp: DateTime.utc(2026, 8, 15), workoutLogId: null));
 
-    await tester.pumpWidget(MaterialApp(
-      home: CalendarScreen(checkInRepo: repo, initialMonth: DateTime.utc(2026, 8, 1)),
-    ));
-    await tester.pumpAndSettle();
+    await _pumpCalendar(tester, checkInRepo: repo, firestore: firestore);
 
     await tester.tap(find.byKey(const Key('calendar_day_2026-08-15')));
     await tester.pumpAndSettle();

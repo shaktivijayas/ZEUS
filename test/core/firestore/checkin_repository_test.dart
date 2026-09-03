@@ -62,4 +62,15 @@ void main() {
     expect((await repo.getCheckIn('2026-08-02'))!.type, CheckInType.freezeUsed);
     expect((await repo.getCheckIn('2026-08-03'))!.type, CheckInType.missed);
   });
+
+  test('watchCheckInsForRange includes docs at both inclusive bounds and excludes docs outside them', () async {
+    await repo.writeCheckIn(CheckIn(date: '2026-07-31', type: CheckInType.checkedIn, timestamp: d(2026, 7, 31), workoutLogId: null));
+    await repo.writeCheckIn(CheckIn(date: '2026-08-01', type: CheckInType.checkedIn, timestamp: d(2026, 8, 1), workoutLogId: null));
+    await repo.writeCheckIn(CheckIn(date: '2026-08-31', type: CheckInType.restDay, timestamp: d(2026, 8, 31), workoutLogId: null));
+    await repo.writeCheckIn(CheckIn(date: '2026-09-01', type: CheckInType.checkedIn, timestamp: d(2026, 9, 1), workoutLogId: null));
+
+    final results = await repo.watchCheckInsForRange('2026-08-01', '2026-08-31').first;
+
+    expect(results.map((c) => c.date).toSet(), {'2026-08-01', '2026-08-31'});
+  });
 }

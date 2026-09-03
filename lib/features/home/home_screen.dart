@@ -159,9 +159,10 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: ApplePalette.background,
       bottomNavigationBar: AppleBottomBar(
         active: AppleBottomTab.summary,
-        onCalendar: () => context.push('/calendar'),
-        onSplit: () => context.push('/split-editor'),
-        onCalories: () => context.push('/calories'),
+        // `go`, not `push` — see the identical comment in calendar_screen.dart.
+        onCalendar: () => context.go('/calendar'),
+        onSplit: () => context.go('/split-editor'),
+        onCalories: () => context.go('/calories'),
       ),
       body: StreamBuilder<AppUser?>(
         stream: widget.userRepo.watchUser(),

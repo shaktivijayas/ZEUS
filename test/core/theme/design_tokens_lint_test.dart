@@ -18,6 +18,9 @@ void main() {
       'split_day_detail_screen.dart',
       'split_day_history_screen.dart',
       'home_screen.dart',
+      'calorie_log_screen.dart',
+      'add_food_screen.dart',
+      'calendar_screen.dart',
     };
     final targets = [
       ...Directory('lib/features')

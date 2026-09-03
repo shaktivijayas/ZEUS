@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:zeus/core/firestore/food_log_repository.dart';
 import 'package:zeus/core/nutrition/food_search_repository.dart';
+import 'package:zeus/core/theme/apple_fitness_palette.dart';
 import 'package:zeus/features/calories/add_food_screen.dart';
 import 'package:zeus/models/food_entry.dart';
 import 'package:zeus/models/food_log.dart';
@@ -116,8 +117,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final errorText = tester.widget<Text>(find.byKey(const Key('search_error_text')));
-    final scheme = Theme.of(tester.element(find.byKey(const Key('search_error_text')))).colorScheme;
-    expect(errorText.style?.color, scheme.error);
+    expect(errorText.style?.color, ApplePalette.moveRed, reason: 'error/attention text on this dark screen uses the Apple Fitness Move Red token, not the legacy light theme error color');
     await tester.tap(find.byKey(const Key('search_switch_to_manual')));
     await tester.pumpAndSettle();
 

@@ -43,4 +43,17 @@ class WorkoutLogRepository {
         .snapshots()
         .map((snap) => snap.docs.map((doc) => WorkoutLog.fromMap(doc.id, doc.data())).toList());
   }
+
+  /// Completed logs with a date from [startDateInclusive] through
+  /// [endDateInclusive] (both "YYYY-MM-DD") — powers the calendar's
+  /// Exercise ring / workout glyph, which only cares whether a day's
+  /// workout was finished, not draft-in-progress state.
+  Stream<List<WorkoutLog>> watchCompletedLogsForRange(String startDateInclusive, String endDateInclusive) {
+    return _collection
+        .where('date', isGreaterThanOrEqualTo: startDateInclusive)
+        .where('date', isLessThanOrEqualTo: endDateInclusive)
+        .where('status', isEqualTo: WorkoutLogStatus.completed.value)
+        .snapshots()
+        .map((snap) => snap.docs.map((doc) => WorkoutLog.fromMap(doc.id, doc.data())).toList());
+  }
 }

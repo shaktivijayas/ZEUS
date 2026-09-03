@@ -42,7 +42,7 @@ void main() {
     expect(find.textContaining('/'), findsNothing);
   });
 
-  testWidgets('shows progress against the goal once one is set', (tester) async {
+  testWidgets('shows progress against the goal once one is set, as the oversized ring hero', (tester) async {
     await userRepo.updateCalorieGoal(
       calorieGoal: 2000,
       macroGoals: const MacroGoals(protein: 150, carbs: 200, fat: 67),
@@ -58,12 +58,14 @@ void main() {
 
     await pumpCalorieLog(tester, foodLogRepo: foodLogRepo, userRepo: userRepo);
 
-    expect(find.text('200 / 2000 kcal'), findsOneWidget);
+    expect(find.byKey(const Key('calorie_ring')), findsOneWidget, reason: 'a goal exists, so the glowing progress ring replaces the flat text total');
+    expect(find.text('200'), findsOneWidget);
+    expect(find.text('of 2,000 kcal goal'), findsOneWidget);
 
-    final totalText = tester.widget<Text>(find.text('200 / 2000 kcal'));
-    final displayStyle = Theme.of(tester.element(find.text('200 / 2000 kcal'))).textTheme.displayMedium!;
-    expect(totalText.style?.fontSize, displayStyle.fontSize, reason: 'the calorie total is the one Display-role number on this screen per DESIGN.md');
-    expect(totalText.style?.fontWeight, displayStyle.fontWeight);
+    final totalText = tester.widget<Text>(find.text('200'));
+    expect(totalText.style?.fontWeight, FontWeight.w900, reason: 'the hero calorie number is ultra-bold per DESIGN.md');
+    expect(totalText.style?.fontSize, 44);
+    expect(totalText.style?.letterSpacing, lessThan(0), reason: 'negative tracking on the oversized hero number');
     expect(totalText.style?.fontFeatures, contains(const FontFeature.tabularFigures()));
   });
 
@@ -85,12 +87,12 @@ void main() {
     ));
 
     await pumpCalorieLog(tester, foodLogRepo: foodLogRepo, userRepo: userRepo);
-    expect(find.text('2026-08-05'), findsOneWidget);
+    expect(find.text('Wednesday, Aug 5'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('calorie_log_next_day')));
     await tester.pumpAndSettle();
 
-    expect(find.text('2026-08-06'), findsOneWidget);
+    expect(find.text('Thursday, Aug 6'), findsOneWidget);
     expect(find.byKey(const Key('food_entry_dinner_Rice')), findsOneWidget);
   });
 

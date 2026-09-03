@@ -83,6 +83,9 @@ final appRouter = GoRouter(
       path: '/calendar',
       builder: (context, state) => CalendarScreen(
         checkInRepo: CheckInRepository(FirebaseFirestore.instance, FirebaseAuth.instance.currentUser!.uid),
+        workoutLogRepo: WorkoutLogRepository(FirebaseFirestore.instance, FirebaseAuth.instance.currentUser!.uid),
+        foodLogRepo: FoodLogRepository(FirebaseFirestore.instance, FirebaseAuth.instance.currentUser!.uid),
+        userRepo: UserRepository(FirebaseFirestore.instance, FirebaseAuth.instance.currentUser!.uid),
         initialMonth: DateTime.now().toUtc(),
       ),
     ),

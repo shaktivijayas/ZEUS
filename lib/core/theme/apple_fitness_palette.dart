@@ -20,9 +20,13 @@ class ApplePalette {
   static const divider = Color(0xFF2C2C2E);
   static const ringTrack = Color(0xFF400010);
   static const tabBarBackground = Color(0xFF121212);
-  // Apple's iOS system red — used for warning-style counts (e.g. "0
-  // exercises") where the Move/Calorie pink accent would read as an
-  // unrelated highlight rather than an alert.
-  static const systemRed = Color(0xFFFF3B30);
-  static const chevron = Color(0xFFC4C4C6);
+  // Apple Fitness's three ring colors, at their exact system hex values —
+  // used where a screen needs to match the real Fitness app rather than
+  // this file's earlier approximations (`green`, `pink` above).
+  static const exerciseGreen = Color(0xFF30D158);
+  static const moveRed = Color(0xFFFA114F);
+  static const standCyan = Color(0xFF00D4FF);
+  // iOS dark-mode separator gray at low opacity — matches a native
+  // disclosure chevron rather than a flat solid gray.
+  static const chevron = Color(0x663C3C43);
 }

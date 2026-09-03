@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import '../theme/app_spacing.dart';
 import '../theme/apple_fitness_palette.dart';
@@ -38,25 +39,25 @@ class AppleBottomBar extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _AppleBottomBarItem(
-                  icon: Icons.donut_large,
+                  icon: CupertinoIcons.gauge,
                   label: 'Summary',
                   active: active == AppleBottomTab.summary,
                   onTap: onSummary,
                 ),
                 _AppleBottomBarItem(
-                  icon: Icons.calendar_month,
+                  icon: CupertinoIcons.calendar,
                   label: 'Calendar',
                   active: active == AppleBottomTab.calendar,
                   onTap: onCalendar,
                 ),
                 _AppleBottomBarItem(
-                  icon: Icons.edit_calendar,
+                  icon: CupertinoIcons.square_split_2x2,
                   label: 'Split',
                   active: active == AppleBottomTab.split,
                   onTap: onSplit,
                 ),
                 _AppleBottomBarItem(
-                  icon: Icons.restaurant,
+                  icon: CupertinoIcons.flame,
                   label: 'Calories',
                   active: active == AppleBottomTab.calories,
                   onTap: onCalories,
@@ -82,7 +83,7 @@ class _AppleBottomBarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? ApplePalette.green : ApplePalette.dateGray;
+    final color = active ? ApplePalette.exerciseGreen : ApplePalette.dateGray;
     return InkWell(
       key: itemKey,
       onTap: onTap,

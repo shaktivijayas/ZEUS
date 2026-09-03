@@ -4,6 +4,16 @@
 name: ZEUS
 description: A calm, personal record-keeper for training and eating.
 colors:
+  # Dark Apple Fitness system — current system, see §1-6 below.
+  apple-background: "#000000"
+  apple-card: "#1C1C1E"
+  apple-primary-text: "#FFFFFF"
+  apple-secondary-text: "#8E8E93"
+  apple-exercise-green: "#30D158"
+  apple-move-red: "#FA114F"
+  apple-stand-cyan: "#00D4FF"
+  apple-chevron: "#3C3C43"
+  # Legacy light "Lab Notebook" system — pending migration, see §7.
   forest-green: "#2E7D32"
   ink: "#1A1D1B"
   muted-ink: "#55605A"
@@ -70,121 +80,186 @@ components:
 
 # Design System: ZEUS
 
-## 1. Overview
+## 0. System Status
 
-**Creative North Star: "The Lab Notebook"**
+ZEUS carries **two** design systems right now, mid-migration:
 
-ZEUS is the calm, honest logbook for someone who trains and eats with intention — not a coach shouting at you, not a game keeping score, just a well-organized notebook that's always exactly where you left it. Every screen exists to get one number or one entry logged and get out of the way: a check-in, a completed set, a meal. The visual system stays quiet on purpose, so the only thing that stands out on any screen is the one piece of data that screen exists to show.
+1. **Dark Apple Fitness system** (§1-6 below) — the current, primary system. Live on: `auth`, `onboarding`, `home`, `split_editor` (list + day detail), `split_history`, `calories` (both the calorie log hero-ring screen and Add Food), `calendar` (Rings/Sessions history view).
+2. **Legacy light "Lab Notebook" system** (§7) — Material 3, light theme. Still live on: `profile` (+ calorie goal). Kept documented, not deleted, so it stays internally consistent until deliberately migrated. Treat any *new* screen as Dark Apple Fitness by default; don't add new Lab Notebook screens.
 
-This system explicitly rejects the loud fitness-app playbook — neon gradients, aggressive red/orange "burn calories" urgency, gamified badges, streak-shaming, hero-metric dashboards screaming a number at you — and it equally rejects the unstyled-Material default the app currently ships with (one seed color, stock widgets, no real typographic or spatial system). Both are treated as failure states.
+A screen belongs fully to one system or the other — never mix tokens from both on the same screen (see Anti-references in PRODUCT.md, "a split brand").
+
+## 1. Overview — Dark Apple Fitness System
+
+**Creative North Star: "The Real Fitness App"**
+
+ZEUS's primary screens now match Apple Fitness's own dark visual language directly, not an inspired-by approximation: pitch-black backgrounds, `#1C1C1E` card surfaces, and the three real Fitness ring colors (Exercise Green, Move Red, Stand Cyan) held in reserve as accents. The habit-loop philosophy carries over unchanged from the original Lab Notebook system — quiet by default, one focus per screen, progress stated rather than hyped — only the surface language changed, from a light Material notebook to Apple's own dark system.
+
+This system still explicitly rejects: gradients, oversaturated non-system colors, gamified badges, streak-shaming, and hero-metric dashboards. The target is Apple's exact restrained system palette, not a louder "fitness app" palette — every color used must trace back to a named value below.
 
 **Key Characteristics:**
-- One accent color, used sparingly and only for identity + primary action, never decoration
-- Flat, tonal surfaces — depth comes from a single layer of surface-on-background, not shadows
-- One typeface family throughout, carrying hierarchy through weight and size alone
-- Numbers are stated plainly and left to speak for themselves — no celebratory animation, no color-coded "good/bad" judgment on a calorie count
-- Every screen has exactly one thing it's asking you to notice or do
+- Pure black background; a single card surface tone (`#1C1C1E`) is the only depth cue, no shadows
+- Three reserved ring accents (Exercise Green, Move Red, Stand Cyan), each with one job — never decoration, never used interchangeably
+- Inter stands in for SF Pro (real SF Pro can't be bundled for Android); hierarchy carried through weight, size, and slight negative tracking on headers, same as native iOS titles
+- Numbers are stated plainly — no celebratory animation, no color-coded "good/bad" judgment
+- Cupertino-shaped icons and chevrons throughout — this is a deliberate exception to the Android platform convention of never porting iOS controls (see PRODUCT.md Platform); Android's *system* guarantees (Back gesture, edge-to-edge insets, 48×48dp targets) still apply regardless
 
 ## 2. Colors
 
-A restrained palette: near-white and near-black neutrals do essentially all the work, with one green accent held in reserve for the moments that actually need it.
-
-### Primary
-- **Deep Forest Green** (`#2E7D32`): The single accent. Used only for the primary action on a screen (Save, Set goal) and the one number a screen most wants you to notice (e.g. the calorie total once a goal exists). Never used as a background fill, decoration, or "positive status" color — see the One Voice Rule below.
+### Ring Accents (the only accent colors in this system)
+- **Exercise Green** (`#30D158`): Active/selected tint — the active bottom-tab icon+label, primary navigation affordances (e.g. the Split Editor back chevron). This is the system's "you are here / this is live" color.
+- **Move Red** (`#FA114F`): Alert/attention accent — used sparingly for a number or label that wants to be noticed (e.g. an exercise count on an unconfigured day). Not a decoration; if it's not drawing the eye to something that matters, it's the wrong color.
+- **Stand Cyan** (`#00D4FF`): Reserved for a third ring/status context (e.g. a future Stand-equivalent metric); not yet used in a shipped screen — don't reach for it as a generic accent.
 
 ### Neutral
-- **Ink** (`#1A1D1B`): Primary text. Near-black, not pure black — softer under long reading, still comfortably ≥4.5:1 against Background and Surface.
-- **Muted Ink** (`#55605A`): Secondary text only — timestamps, captions, helper text. Checked to stay ≥4.5:1 against Background; if a future value drifts lighter than this for "elegance," that's a regression, not a style choice.
-- **Background** (`#F6F8F6`): App background. A near-white with the faintest lean toward the accent's own hue — not a warm cream, not stark white.
-- **Surface** (`#FFFFFF`): Cards, list rows, sheets, and fields sit on pure white against the slightly darker Background, which is the system's only depth cue.
-- **Divider** (`#E3E7E3`): Hairline separators between list rows and sections. Never used as a decorative border.
+- **Pure Background** (`#000000`): Scaffold background for every screen on this system.
+- **Card Background** (`#1C1C1E`): The single elevated surface tone — list rows, cards, sheets. No second card tone; depth comes from this one background/card contrast, same Flat-At-Rest philosophy as the legacy system.
+- **Primary Text** (`#FFFFFF`): Headers, titles, primary row text.
+- **Secondary Text / Muted Labels** (`#8E8E93`, iOS System Gray): Subtext, captions, timestamps — implemented as `ApplePalette.dateGray` in code (`lib/core/theme/apple_fitness_palette.dart`; the field predates this doc section and keeps its name to avoid a repo-wide rename, but its value **is** this token).
+- **Chevron / Disclosure** (`#3C3C43` at low opacity — `Color(0x663C3C43)`): Thin, quiet, native-feeling disclosure arrows. Never full-opacity solid gray.
 
-### Semantic
-- **Error** (`#B3261E`): Validation errors and destructive confirmations only (e.g. a save failure, an invalid amount). A muted brick red, not a saturated alert red — errors should read as "something needs attention," not alarm.
-
-### Material ColorScheme Mapping
-This system is implemented as Flutter `ColorScheme` role tokens, not raw hex applied ad hoc — roles resolve contrast correctly; raw hex doesn't. Forest Green → `primary`; white → `onPrimary`; Background → `surface`/scaffold background (the base tone everything sits on); Surface → `surfaceContainerLowest` (the elevated white tone cards/fields sit on, per the Elevation section); Ink → `onSurface`; Muted Ink → `onSurfaceVariant`; Divider → `outline`/`outlineVariant`; Error → `error`; white → `onError`.
+### Legacy-adjacent (kept for continuity, not part of the ring-accent vocabulary)
+- `ApplePalette.green` (`#A7FE00`) and `ApplePalette.pink` (`#FF2D55`) remain in code, still driving Home's check-in button, activity ring, and checkboxes. They predate this doc's exact-system-color pass and are visually close cousins of Exercise Green / Move Red rather than duplicates — left as-is to avoid an unrequested Home redesign. Don't use them in new work; use the Ring Accents above instead.
 
 ### Named Rules
-**The One Voice Rule.** Deep Forest Green appears on ≤10% of any given screen's surface area. If more than one element on a screen is fighting for attention in green, the layout is wrong, not the rule.
+**The Named-Color Rule.** Every color on a Dark Apple Fitness screen must be one of the tokens above (or a system neutral like pure white/black). If you're reaching for a raw hex that isn't named here, it's off-system.
 
-**No Second Green Rule.** There is no separate "success" or "goal met" color. Progress is communicated through the number itself and its position relative to the goal, in Ink — never through a color swap, checkmark celebration, or badge. This is the direct visual expression of "progress shown honestly, not hyped."
-
-**The Dark-Is-Not-Optional Rule.** This system ships a dark `ColorScheme` using the same role mapping above (surfaces invert, Forest Green lightens to hold contrast on dark backgrounds), generated deliberately, not a quick `Brightness.dark` alpha-invert. `lib/core/theme/app_theme.dart` currently defines only `AppTheme.light` — closing that gap is part of implementing this system, not a follow-up task.
+**No Second Green Rule (carried over).** No separate "success" or "goal met" color — progress is stated in place, not celebrated with a color swap.
 
 ## 3. Typography
 
-**Body Font:** Roboto (system default on Android; no new font dependency)
-**Display/Headline/Title/Label:** Roboto, carried through weight and size alone — no second family.
-
-**Character:** One humanist sans doing every job in the app, the way Apple Health leans on San Francisco for everything. Hierarchy is entirely weight- and size-driven, which is what keeps the app feeling like one coherent notebook rather than a set of differently-branded screens. Numeric displays (calorie totals, macro grams, streak counts) use tabular (monospaced) figures so digits align when they change.
+**Font:** [Inter](https://fonts.google.com/specimen/Inter) via `google_fonts`, standing in for SF Pro — see the code comment on `_appleFont()` in `split_editor_screen.dart` for why (SF Pro can't be licensed/bundled for Android). Not Roboto, not the app-wide `AppTypography` scale — this system deliberately opts out of both.
 
 ### Hierarchy
-- **Display** (600, 28sp, 1.15 line-height): The single most important number on a screen — a calorie total against goal, a streak count. Used at most once per screen.
-- **Headline** (600, 22sp, 1.2): Screen titles (AppBar titles).
-- **Title** (600, 17sp, 1.3): Section headers within a screen (a meal-type label like "Breakfast"), card/list-row primary text.
-- **Body** (400, 15sp, 1.4): Form field values, list-row secondary text, body copy generally. Cap any prose block's line length so it never runs edge-to-edge on a wide device.
-- **Label** (500, 13sp, 0.02em tracking): Chip labels, field captions, timestamps, button text.
+- **Card / Screen Headers** ("Monday", "Split Editor"): Bold (700), tight negative tracking (`letterSpacing: -0.4`) — matches native iOS large-title tightening.
+- **Subtext / Descriptions** ("Rest day — tap to configure", "Chest · 4 exercises"): Regular weight (400), `#8E8E93`. Never lighter than Regular (w300 reads as too thin against pure black and was corrected away from).
+- **Attention indicators** (an exercise count, a Move-ring-adjacent number): Bold/Semibold (600-700) in Move Red — weight *and* color both carry the emphasis.
 
 ### Named Rules
-**The One Family Rule.** If a screen needs a second typeface to feel "designed," the hierarchy is under-specified, not the font choice. Solve it with weight and size first.
+**No Light Body Text.** Body/subtext weight floors at Regular (400) on this system — thinner weights lose legibility against `#000000`.
 
 ## 4. Elevation
 
-Flat by default, tonal instead of shadowed — the Background/Surface contrast (`#F6F8F6` under `#FFFFFF`) is the only depth cue most screens need. This mirrors Apple Health's layered-but-flat sheets rather than Material's default drop-shadow cards.
-
-### Shadow Vocabulary
-- **overlay** (`box-shadow: 0 8px 24px rgba(26,29,27,0.12)`): Reserved for transient overlays only — bottom sheets, dialogs, menus. Never applied to a resting card or list row.
-
-### Named Rules
-**The Flat-At-Rest Rule.** Nothing that stays on screen gets a shadow. Shadows exist only under things that are temporarily floating above the content and will be dismissed.
+Flat by default — Background/Card contrast (`#000000` under `#1C1C1E`) is the only depth cue, same Flat-At-Rest philosophy as §8 (legacy system). No shadows on resting cards or list rows.
 
 ## 5. Components
 
-### Buttons
-- **Shape:** 8px corner radius — soft, not sharp, not pill-shaped.
-- **Primary:** Forest Green background (`#2E7D32`), white text, 12px/24px padding. Pressed state darkens to `#26692A`. This is the only place a filled green button appears — one primary action per screen.
-- **Secondary / Text:** No fill, Ink text, no border. Used for anything that isn't the screen's single primary action (e.g. "Switch to manual entry").
-- **Disabled (in-flight save):** 40% opacity, no pointer feedback — used while a save is genuinely in progress, per the double-submit guard already in AddFoodScreen.
+### Cards / List Rows (weekday rows, split-day cards)
+- **Corner Radius:** 12-14pt (`BorderRadius.circular(14)` on the row's `Material`/`InkWell` pair).
+- **Background:** Card (`#1C1C1E`) on Background (`#000000`).
+- **Internal Padding:** Generous — `AppSpacing.md` (16px) horizontal, `AppSpacing.md + 5` (21px) vertical minimum on a tappable row; `AppSpacing.md` (16px) between stacked cards so the list breathes rather than reading as a dense table.
+- **Trailing affordance:** A `CupertinoIcons.chevron_forward` disclosure chevron in the Chevron token, right-aligned, whenever the row navigates somewhere.
 
-### Chips (Sex / Activity / Goal / meal-type selection)
-- **Unselected:** White surface, Muted Ink text, 1px Divider-colored border, 8px radius.
-- **Selected:** Forest Green fill, white text, no border. Selection state is the only place outside the primary button where the accent fills a whole shape — keep it to single-selection chip rows, never a whole screen of filled chips at once.
+### Bottom Tab Bar (`lib/core/widgets/apple_bottom_bar.dart`, shared across every screen reachable from it)
+- **Icons:** Thin-line Cupertino icons only, never filled/blocky Material icons — `CupertinoIcons.gauge` (Summary), `CupertinoIcons.calendar` (Calendar), `CupertinoIcons.square_split_2x2` (Split), `CupertinoIcons.flame` (Calories).
+- **Active tint:** Exercise Green (`#30D158`). Inactive: `#8E8E93`.
+- **Labels:** 11px, weight 600, centered directly beneath each icon.
+- **Surface:** Frosted/blurred (`BackdropFilter`, `tabBarBackground` at 75% alpha), not a flat opaque bar.
 
-### Cards / List Rows (food entries, meal groups)
-- **Corner Style:** 12px radius on card-like containers; plain hairline-divided rows for simple lists (the food-entry-under-meal-header rows) rather than nesting a card per entry — nested cards are a named anti-pattern for this system.
-- **Background:** Surface (`#FFFFFF`) on Background.
-- **Shadow Strategy:** None at rest (see Elevation).
-- **Border:** None; separation comes from the Background/Surface tone shift, or a single Divider hairline between rows in a flat list.
-- **Internal Padding:** `md` (16px) minimum on any tappable row.
+### Hero Metric Ring (calorie log)
+- A glowing circular progress ring (220pt, 16pt stroke, round cap) replaces a flat "consumed / goal" text line whenever a goal exists — track in `ringTrack` (`#400010`), progress in Move Red, a soft Move Red glow (`BoxShadow`, 35% alpha, 36pt blur) behind the ring.
+- Centered inside: the consumed total in the oversized hero number style (44pt, Black/w900, `-1.2` tracking, tabular figures) with a muted `of X,XXX kcal goal` caption beneath.
+- No-goal state drops the ring entirely (nothing to show progress against) and shows the same oversized total with a `kcal logged today` caption and an Exercise Green pill CTA to set a goal — never a bare "0" with no context.
 
-### Inputs / Fields (weight, height, age, food name, calories, quantity)
-- **Style:** Underline or outlined per Material3 default, Divider-colored border at rest, Forest Green border on focus. No fill.
-- **Focus:** Border shifts to Forest Green; no glow, no shadow.
-- **Error:** Error red (`#B3261E`) border and helper text, replacing the silent no-op behavior the current AddFoodScreen/CalorieGoalScreen forms have — every invalid input state must be visible in this color, not just logically handled.
+### Circular Add Button
+- 30pt circle, `divider` (`#2C2C2E`) fill, centered `CupertinoIcons.add` at 16pt in Primary Text — the iOS-style thin-line add affordance, replacing a plain Material `+` `IconButton`. Used at the trailing edge of a meal card's header row.
 
-### Navigation (AppBar, day-navigation controls)
-- **Style:** Headline-weight title, Ink on Surface, flat (no shadow, hairline Divider at the bottom edge if needed for separation). Back affordance always available via the system default — never occupied by a feature control (the day-navigation chevrons belong in `actions`, not `leading`).
+### Segmented Control (Add Food: Manual / Search)
+- A 36pt-tall rounded pill track (`card` fill, 18pt radius) containing two equal segments. The active segment gets a smooth `AnimatedContainer`-driven floating capsule (`#EBEBF0`, near-white, 200ms `easeOutCubic`) behind black text; the inactive segment is transparent with `dateGray` text. Never a plain text-link pair for a binary mode switch on this system.
 
-## 6. Do's and Don'ts
+### History Calendar (Rings / Sessions)
+- A single continuous 7-column grid spans a fixed 6-month lookback through the current month — flowing, not a bounded single-month view, but not true unbounded infinite scroll either. A short month label (e.g. "Nov") renders inline above the day number on each month's 1st cell, since the grid's day-of-week alignment carries continuously across month boundaries.
+- Top bar: "Cancel" (Exercise Green, pops the screen) — left; the month/year of whatever row is nearest the scroll top — center, live-updating as the user scrolls; a "Rings ⌄ / Sessions ⌄" mode popup (Exercise Green) — right.
+- **Rings mode**: three concentric rings per day — Move (outer, Red, mapped to calorie-goal progress), Exercise (middle, Green, mapped to a completed workout that day), Stand (inner, Cyan, mapped to check-in status that day — ZEUS has no literal "stand" metric, so this is the closest honest equivalent). A day with all three at zero renders a ghosted low-opacity gray outline instead of colored arcs.
+- **Sessions mode**: tiny glyphs below the day number instead of rings — a green running-figure for a completed workout, a cyan crescent moon for a marked rest day. Deliberately limited to real ZEUS categories; no fabricated Mindfulness/Walking glyphs with no data behind them (see PRODUCT.md's data-honesty note on this screen). A bottom filter bar (translucent `tabBarBackground` capsule, Exercise Green pill for the active filter, `divider` fill for inactive) toggles between All / Workouts / Rest days.
+- Today's day number is always a solid Move Red filled circle with white text, in both modes.
+- Tapping any day still marks it a rest day if no check-in doc exists yet for that date (pre-existing behavior, carried over unchanged from the legacy calendar — never overwrites an existing doc).
+
+### Grouped Form List (Add Food)
+- All fields for one logical form step live inside a single `_FormCard`-style container (`card` fill, 14pt radius) as label/value rows, hairline-divided (`divider` at 60% alpha, inset to align with the row's left padding) — never separate bordered boxes stacked with gaps.
+- Each row: label left in Primary Text, the `TextField` itself right-aligned with no border/fill (`InputBorder.none`), both entered text and hint tinted `dateGray` (Secondary Text/Muted Labels token) per this screen's exact placeholder-and-value treatment.
+
+### Navigation (AppBar)
+- **Style:** `centerTitle: true` — iOS nav bars always center the title, never left-align it next to the back affordance the way Material does by default. Title text is short and uppercase (e.g. "SPLIT", not "Split Editor") at Home's large-title size (34pt, Bold/w700, `-0.4` tracking) — same scale as Home's "Summary" large title, closer to Apple Fitness's own bold category-header treatment than a standard 17pt inline title. `CupertinoIcons.back` in Exercise Green as the leading affordance (this system's one intentional Cupertino-shaped control exception — see §1's platform note).
+
+## 6. Do's and Don'ts — Dark Apple Fitness System
 
 ### Do:
-- **Do** hold Deep Forest Green to ≤10% of any screen's surface (the One Voice Rule).
-- **Do** use tonal Background/Surface contrast instead of shadows for anything that stays on screen.
-- **Do** carry every visual hierarchy decision through Roboto's weight and size alone, mapped to Material's Display/Headline/Title/Body/Label type-scale roles — never a hand-picked size per screen.
-- **Do** show every invalid-input and save-failure state visibly, in Error red with real copy — never a silent no-op.
-- **Do** leave `AppBar.leading` free for the system back button; put feature controls in `actions`.
-- **Do** verify body text hits ≥4.5:1 contrast against its background before shipping any new screen.
-- **Do** implement colors as Material `ColorScheme` role tokens with both a light and a dark scheme — see the Dark-Is-Not-Optional Rule.
-- **Do** keep every touch target at least 48×48dp, with 8dp between adjacent targets.
-- **Do** use `sp` for all type sizes, never fixed `px`/logical pixels, so the system font-size setting is respected.
+- **Do** keep every color on a Dark Apple Fitness screen traceable to a token in §2 (the Named-Color Rule).
+- **Do** use Exercise Green only for "active/selected/here" states; Move Red only for attention/alert states. Don't swap their jobs.
+- **Do** keep subtext at Regular weight or heavier — never Light/w300.
+- **Do** apply slight negative letter-spacing to bold headers (`-0.4`) for the native-iOS-title feel.
+- **Do** keep the bottom tab bar's icon set thin-line/Cupertino-shaped; a filled Material icon here is an immediate regression.
+- **Do** honor Android's system guarantees (Back gesture, edge-to-edge insets, 48×48dp touch targets) even though the visual skin is iOS-shaped.
 
 ### Don't:
-- **Don't** use neon gradients or saturated "burn calories" red/orange urgency anywhere in the app.
-- **Don't** add gamified badges, streak-shaming copy, or celebratory animations for hitting a goal — progress is stated, not applauded.
-- **Don't** build a hero-metric dashboard (big number + small label + gradient accent) — the calorie total is one line in the existing screen flow, not its own spectacle screen.
-- **Don't** ship a screen using stock, unstyled Material 3 defaults with no layout or typographic decisions applied — that is the exact state this system replaces.
-- **Don't** introduce a second "success" color for goals met or streaks kept (the No Second Green Rule).
-- **Don't** nest a card inside a card, or wrap every list row in its own elevated container.
-- **Don't** apply raw hex values directly in widgets — resolve through `Theme.of(context).colorScheme` roles so light/dark and contrast stay correct.
-- **Don't** port in iOS-shaped controls (Cupertino switches, iOS-style dialogs) — this is an Android-only app; Material 3 components throughout.
+- **Don't** introduce a fourth accent color outside Exercise Green / Move Red / Stand Cyan.
+- **Don't** use gradients, glow, or non-system-accurate hex values "for polish" — accuracy to the real Apple Fitness palette is the polish.
+- **Don't** mix this system's tokens onto a Legacy-system screen (§7) or vice versa on the same screen.
+- **Don't** add a second card surface tone; `#1C1C1E` is the only elevated tone.
+
+---
+
+## 7. Legacy Light System ("Lab Notebook")
+
+Still governs `calendar`, `calories` (log + add food), and `profile` (+ calorie goal) as of this writing. Documented in full below so those screens stay internally consistent until deliberately migrated to the Dark Apple Fitness system — don't use these tokens on a new screen.
+
+### 7.1 Overview
+
+ZEUS's original system: the calm, honest logbook — not a coach shouting at you, not a game keeping score. Every screen exists to get one number or one entry logged and get out of the way. Rejects the loud fitness-app playbook (neon gradients, urgency red/orange, gamified badges) and the unstyled-Material default equally.
+
+**Key Characteristics:**
+- One accent color (Forest Green), used sparingly, never decoration
+- Flat, tonal surfaces — depth from surface-on-background, not shadows
+- One typeface (Roboto) carrying hierarchy through weight and size alone
+- Numbers stated plainly, no celebratory color-coding
+
+### 7.2 Colors
+
+**Primary** — **Deep Forest Green** (`#2E7D32`): The single accent. Primary action (Save, Set goal) and the one number a screen most wants noticed. Never a background fill or "positive status" color.
+
+**Neutral:**
+- **Ink** (`#1A1D1B`): Primary text.
+- **Muted Ink** (`#55605A`): Secondary text only — ≥4.5:1 against Background.
+- **Background** (`#F6F8F6`): App background.
+- **Surface** (`#FFFFFF`): Cards, rows, sheets, fields.
+- **Divider** (`#E3E7E3`): Hairline separators only.
+
+**Semantic** — **Error** (`#B3261E`): Validation errors and destructive confirmations only.
+
+**Material ColorScheme Mapping:** Forest Green → `primary`; white → `onPrimary`; Background → `surface`/scaffold background; Surface → `surfaceContainerLowest`; Ink → `onSurface`; Muted Ink → `onSurfaceVariant`; Divider → `outline`/`outlineVariant`; Error → `error`; white → `onError`.
+
+**Named Rules:**
+- **The One Voice Rule.** Forest Green appears on ≤10% of any screen's surface.
+- **No Second Green Rule.** No separate "success"/"goal met" color.
+- **The Dark-Is-Not-Optional Rule.** This legacy system ships its own dark `ColorScheme` (same role mapping, surfaces inverted) — unrelated to the Dark Apple Fitness system in §1-6, which is a different visual system entirely, not this system's dark mode.
+
+### 7.3 Typography
+
+Roboto throughout, weight/size-driven hierarchy, tabular figures for numeric displays.
+
+- **Display** (600, 28sp, 1.15): The single most important number on a screen.
+- **Headline** (600, 22sp, 1.2): Screen titles.
+- **Title** (600, 17sp, 1.3): Section headers, card/list-row primary text.
+- **Body** (400, 15sp, 1.4): Field values, list-row secondary text.
+- **Label** (500, 13sp, 0.02em): Chips, captions, timestamps, buttons.
+
+**The One Family Rule.** If a screen needs a second typeface to feel designed, the hierarchy is under-specified.
+
+### 7.4 Elevation
+
+Flat by default — Background/Surface contrast is the only depth cue. **overlay** shadow (`0 8px 24px rgba(26,29,27,0.12)`) reserved for transient sheets/dialogs/menus only. **The Flat-At-Rest Rule**: nothing that stays on screen gets a shadow.
+
+### 7.5 Components
+
+- **Buttons:** 8px radius. Primary: Forest Green bg, white text, 12px/24px padding, pressed → `#26692A`. Secondary/Text: no fill, Ink text. Disabled (in-flight save): 40% opacity.
+- **Chips:** Unselected: white surface, Muted Ink text, 1px Divider border, 8px radius. Selected: Forest Green fill, white text, no border.
+- **Cards / List Rows:** 12px radius on cards; hairline-divided plain rows for simple lists (no nested cards). Surface on Background, no shadow at rest, `md` (16px) minimum internal padding.
+- **Inputs:** Divider-colored border at rest, Forest Green border on focus, no fill. Error: Error-red border + visible helper text, never a silent no-op.
+- **Navigation:** Headline-weight title, Ink on Surface, flat. `AppBar.leading` reserved for system back; feature controls go in `actions`.
+
+### 7.6 Do's and Don'ts
+
+**Do:** hold Forest Green to ≤10% of a screen; use tonal contrast instead of shadows; carry hierarchy through Roboto weight/size via Material type-scale roles; show invalid-input/save-failure states visibly in Error red; leave `AppBar.leading` for system back; verify ≥4.5:1 body contrast; implement colors as `ColorScheme` roles with light+dark; 48×48dp touch targets, 8dp gaps; `sp` units always.
+
+**Don't:** use neon gradients or saturated urgency red/orange; add gamified badges or streak-shaming; build a hero-metric dashboard; ship stock unstyled Material 3; add a second "success" color; nest cards; apply raw hex outside `ColorScheme` roles; port in Cupertino-shaped controls — **this rule is specific to Legacy-system screens**; the Dark Apple Fitness system in §1-6 carries a deliberate, documented exception to it.

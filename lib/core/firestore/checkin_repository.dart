@@ -63,11 +63,14 @@ class CheckInRepository {
     return {for (final doc in snap.docs) doc.id: CheckIn.fromMap(doc.id, doc.data())};
   }
 
-  Stream<List<CheckIn>> watchCheckInsForMonth(int year, int month) {
-    final prefix = '$year-${month.toString().padLeft(2, '0')}';
+  /// Docs from [startDateInclusive] through [endDateInclusive] (both
+  /// "YYYY-MM-DD"), live-updating — powers the calendar's continuous
+  /// multi-month grid, which spans a date range rather than a single
+  /// calendar month at its edges.
+  Stream<List<CheckIn>> watchCheckInsForRange(String startDateInclusive, String endDateInclusive) {
     return _collection
-        .where(FieldPath.documentId, isGreaterThanOrEqualTo: '$prefix-01')
-        .where(FieldPath.documentId, isLessThanOrEqualTo: '$prefix-31')
+        .where(FieldPath.documentId, isGreaterThanOrEqualTo: startDateInclusive)
+        .where(FieldPath.documentId, isLessThanOrEqualTo: endDateInclusive)
         .snapshots()
         .map((snap) => snap.docs.map((doc) => CheckIn.fromMap(doc.id, doc.data())).toList());
   }

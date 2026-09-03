@@ -78,4 +78,14 @@ void main() {
     // Verify entries are returned newest-first by loggedAt timestamp
     expect(recent.map((e) => e.name).toList(), ['C', 'B']);
   });
+
+  test('watchLogsForRange only includes logs with a doc ID inside the date range', () async {
+    await repo.saveLog(FoodLog.empty('2026-07-31').withEntryAdded(MealType.dinner, _entry('Outside before', 100, DateTime.utc(2026, 7, 31, 19))));
+    await repo.saveLog(FoodLog.empty('2026-08-05').withEntryAdded(MealType.lunch, _entry('Dal', 350, DateTime.utc(2026, 8, 5, 13))));
+    await repo.saveLog(FoodLog.empty('2026-09-01').withEntryAdded(MealType.breakfast, _entry('Outside after', 100, DateTime.utc(2026, 9, 1, 8))));
+
+    final results = await repo.watchLogsForRange('2026-08-01', '2026-08-31').first;
+
+    expect(results.map((l) => l.date).toList(), ['2026-08-05']);
+  });
 }
